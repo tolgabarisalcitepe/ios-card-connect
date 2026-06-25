@@ -67,11 +67,20 @@ enum CardParser {
         guard !lines.isEmpty else { return }
         var rest = lines
 
-        let nameLine = normalizeAllCaps(rest.removeFirst())
+        let rawNameLine = rest.removeFirst()
+        let nameLine = normalizeAllCaps(rawNameLine)
         let parts = nameLine.split(separator: " ").map(String.init)
+        let rawParts = rawNameLine.split(separator: " ").map(String.init)
+
         if parts.count >= 2 {
-            result.firstName = String(parts[0].prefix(FieldLimits.maxName))
-            result.lastName  = String(parts.dropFirst().joined(separator: " ").prefix(FieldLimits.maxName))
+            if isReversedFormat(rawParts) {
+                // Ters format: SOYAD Ad → firstName = Ad, lastName = SOYAD
+                result.firstName = String(parts.dropFirst().joined(separator: " ").prefix(FieldLimits.maxName))
+                result.lastName  = String(parts[0].prefix(FieldLimits.maxName))
+            } else {
+                result.firstName = String(parts[0].prefix(FieldLimits.maxName))
+                result.lastName  = String(parts.dropFirst().joined(separator: " ").prefix(FieldLimits.maxName))
+            }
         } else {
             result.firstName = String(nameLine.prefix(FieldLimits.maxName))
         }
@@ -89,6 +98,19 @@ enum CardParser {
     }
 
     // MARK: - Helpers
+
+    /// Ters format tespiti: "SOYAD Ad" → true
+    /// Kural: ilk token all-caps, kalan tokenlardan en az biri mixed-case ise ters formattır.
+    private static func isReversedFormat(_ rawParts: [String]) -> Bool {
+        guard rawParts.count >= 2 else { return false }
+        let firstIsAllCaps = rawParts[0].rangeOfCharacter(from: .letters) != nil
+            && rawParts[0].count > 1
+            && rawParts[0] == rawParts[0].uppercased()
+        let restHasMixedCase = rawParts.dropFirst().contains { part in
+            part.rangeOfCharacter(from: .letters) != nil && part != part.uppercased()
+        }
+        return firstIsAllCaps && restHasMixedCase
+    }
 
     private static func normalizeAllCaps(_ line: String) -> String {
         line.split(separator: " ").map { word -> String in
