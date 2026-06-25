@@ -14,6 +14,9 @@ enum CardParser {
     private static let phoneRegex = try! NSRegularExpression(
         pattern: "(?:(?:\\+|00)\\d{1,3}[\\s.\\-]?)?(?:[\\(]?\\d[\\s.\\-]?){6,14}\\d"
     )
+    private static let linkedinRegex = try! NSRegularExpression(
+        pattern: "(?i)(?:https?://)?(?:www\\.)?linkedin\\.com|\\blinkedin\\b"
+    )
     private static let faxRegex = try! NSRegularExpression(
         pattern: "(?i)(faks?|fax|\u{1F4E0}|f\\.?)[:\\s]"
     )
@@ -44,6 +47,15 @@ enum CardParser {
             if let email = firstMatch(emailRegex, in: line) {
                 emails.append(String(email.lowercased().prefix(FieldLimits.maxEmail)))
                 continue
+            }
+            if result.linkedin.isEmpty {
+                let ns = line as NSString
+                let fullRange = NSRange(location: 0, length: ns.length)
+                if linkedinRegex.firstMatch(in: line, range: fullRange) != nil,
+                   let normalized = URLValidator.normalizeLinkedIn(line.trimmingCharacters(in: .whitespaces)) {
+                    result.linkedin = String(normalized.prefix(FieldLimits.maxURL))
+                    continue
+                }
             }
             if hasMatch(faxRegex, in: line) || hasMatch(extRegex, in: line) {
                 continue
@@ -85,15 +97,19 @@ enum CardParser {
             result.firstName = String(nameLine.prefix(FieldLimits.maxName))
         }
 
+        var addressParts: [String] = []
         for line in rest {
             let normalized = normalizeAllCaps(line)
             if result.company.isEmpty, isCompanyLine(normalized) {
                 result.company = String(normalized.prefix(FieldLimits.maxCompany))
             } else if result.title.isEmpty, !isAddressLine(normalized) {
                 result.title = cleanPunctuation(String(normalized.prefix(FieldLimits.maxTitle)))
-            } else if result.address.isEmpty {
-                result.address = String(normalized.prefix(FieldLimits.maxAddress))
+            } else {
+                addressParts.append(normalized)
             }
+        }
+        if !addressParts.isEmpty {
+            result.address = String(addressParts.joined(separator: ", ").prefix(FieldLimits.maxAddress))
         }
     }
 
