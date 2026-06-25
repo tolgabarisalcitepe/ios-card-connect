@@ -42,7 +42,7 @@ struct CameraView: View {
         if viewModel.cameraPermissionDenied {
             permissionDeniedView
         } else if viewModel.mode == .card {
-            CameraPreviewView(session: viewModel.session)
+            CardCaptureView(session: viewModel.session)
         } else {
             DataScannerView(
                 onVCardDetected: { payload in Task { await handleVCard(payload) } },
