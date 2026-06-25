@@ -7,16 +7,19 @@ import SwiftUI
 
 protocol DependencyContainer {
     var userProfileStore: UserProfileStore { get }
-    // contactStore, scanFlow, permissionCoordinator — ilgili issue'larda eklenir
+    var scanFlow: ScanFlowActor { get }
+    // contactStore, permissionCoordinator — ilgili issue'larda eklenir
 }
 
 // MARK: - Live Implementation
 
 final class LiveDependencyContainer: DependencyContainer {
     let userProfileStore: UserProfileStore
+    let scanFlow: ScanFlowActor
 
     init() {
         self.userProfileStore = UserProfileStore()
+        self.scanFlow = ScanFlowActor()
     }
 }
 
