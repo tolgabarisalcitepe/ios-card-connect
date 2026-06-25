@@ -44,6 +44,7 @@ struct ConfirmView: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Yeniden Çek") {
+                    ConfirmViewModel.deletePhotos(at: photoPaths)
                     clearDraft()
                     path.removeLast()
                 }
@@ -224,8 +225,7 @@ struct ConfirmView: View {
             photoPaths: photoPaths.map(\.path)
         )
 
-        // TODO: ContactStore.insert(contact) — Epic 2 (#19)
-        _ = contact
+        await ConfirmViewModel.saveContact(contact, scanFlow: dependencies.scanFlow)
 
         await dependencies.scanFlow.reset()
         clearDraft()

@@ -32,4 +32,23 @@ enum ConfirmViewModel {
             photoPaths: photoPaths
         )
     }
+
+    /// ContactStore hazır olduğunda (Epic 2) implement edilecek.
+    /// Şimdilik: ScanFlowActor.contactID güncellenir, fotoğraflar korunur.
+    @discardableResult
+    static func saveContact(
+        _ contact: Contact,
+        scanFlow: ScanFlowActor
+    ) async -> Bool {
+        // TODO: Epic 2 — await contactStore.insert(contact)
+        await scanFlow.setContactID(contact.id)
+        return true
+    }
+
+    /// İptal / yeniden çek: geçici fotoğraf dosyalarını diskten siler.
+    static func deletePhotos(at paths: [URL]) {
+        for url in paths {
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
 }
