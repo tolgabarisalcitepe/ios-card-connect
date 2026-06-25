@@ -1,0 +1,13 @@
+// AppRoute.swift
+// CardConnect
+// String route yasaktır — tüm navigation bu enum üzerinden yapılır.
+
+import Foundation
+
+enum AppRoute: Hashable {
+    case home
+    case camera
+    case confirm
+    case duplicate(contactID: UUID)
+    case eventMatch(contactID: UUID)
+}

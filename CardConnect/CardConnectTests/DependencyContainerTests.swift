@@ -10,25 +10,40 @@ final class DependencyContainerTests: XCTestCase {
 
     private final class MockDependencyContainer: DependencyContainer {
         let userProfileStore: UserProfileStore = UserProfileStore()
+        let scanFlow: ScanFlowActor = ScanFlowActor()
+        let permissionCoordinator: PermissionCoordinator = PermissionCoordinator()
     }
 
-    // MARK: - Tests
+    // MARK: - Protocol conformance
 
     func testLiveDependencyContainerConformsToProtocol() {
         let container: any DependencyContainer = LiveDependencyContainer()
         XCTAssertNotNil(container.userProfileStore)
+        XCTAssertNotNil(container.scanFlow)
+        XCTAssertNotNil(container.permissionCoordinator)
     }
 
     func testMockContainerConformsToProtocol() {
         let container: any DependencyContainer = MockDependencyContainer()
         XCTAssertNotNil(container.userProfileStore)
+        XCTAssertNotNil(container.scanFlow)
+        XCTAssertNotNil(container.permissionCoordinator)
     }
+
+    // MARK: - Same instance guarantee
 
     func testLiveContainerReturnsSameUserProfileStoreInstance() {
         let container = LiveDependencyContainer()
-        // Her erişimde aynı instance dönmeli — yeni actor üretilmemeli
-        let storeA = container.userProfileStore
-        let storeB = container.userProfileStore
-        XCTAssertTrue(storeA === storeB)
+        XCTAssertTrue(container.userProfileStore === container.userProfileStore)
+    }
+
+    func testLiveContainerReturnsSameScanFlowInstance() {
+        let container = LiveDependencyContainer()
+        XCTAssertTrue(container.scanFlow === container.scanFlow)
+    }
+
+    func testLiveContainerReturnsSamePermissionCoordinatorInstance() {
+        let container = LiveDependencyContainer()
+        XCTAssertTrue(container.permissionCoordinator === container.permissionCoordinator)
     }
 }

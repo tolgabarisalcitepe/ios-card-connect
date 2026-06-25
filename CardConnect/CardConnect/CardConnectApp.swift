@@ -23,9 +23,16 @@ struct CardConnectApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootNavigationView()
                 .modelContainer(modelContainer)
                 .environment(\.dependencies, dependencies)
+                .onOpenURL { handleOpen(url: $0) }
         }
+    }
+
+    private func handleOpen(url: URL) {
+        guard url.pathExtension.lowercased() == "vcf",
+              let content = try? String(contentsOf: url, encoding: .utf8) else { return }
+        Task { await dependencies.scanFlow.setIncomingVCard(content) }
     }
 }

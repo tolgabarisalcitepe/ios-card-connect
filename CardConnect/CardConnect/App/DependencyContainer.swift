@@ -8,7 +8,8 @@ import SwiftUI
 protocol DependencyContainer {
     var userProfileStore: UserProfileStore { get }
     var scanFlow: ScanFlowActor { get }
-    // contactStore, permissionCoordinator — ilgili issue'larda eklenir
+    var permissionCoordinator: PermissionCoordinator { get }
+    // contactStore — Epic 2'de eklenir
 }
 
 // MARK: - Live Implementation
@@ -16,10 +17,12 @@ protocol DependencyContainer {
 final class LiveDependencyContainer: DependencyContainer {
     let userProfileStore: UserProfileStore
     let scanFlow: ScanFlowActor
+    let permissionCoordinator: PermissionCoordinator
 
     init() {
         self.userProfileStore = UserProfileStore()
         self.scanFlow = ScanFlowActor()
+        self.permissionCoordinator = PermissionCoordinator()
     }
 }
 
