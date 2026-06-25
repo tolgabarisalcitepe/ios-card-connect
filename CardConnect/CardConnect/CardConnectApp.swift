@@ -11,7 +11,7 @@ import SwiftData
 @main
 struct CardConnectApp: App {
 
-    private let container: ModelContainer = {
+    private let modelContainer: ModelContainer = {
         do {
             return try SwiftDataStack.makeContainer()
         } catch {
@@ -19,10 +19,13 @@ struct CardConnectApp: App {
         }
     }()
 
+    private let dependencies: any DependencyContainer = LiveDependencyContainer()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .modelContainer(container)
+                .modelContainer(modelContainer)
+                .environment(\.dependencies, dependencies)
         }
     }
 }
