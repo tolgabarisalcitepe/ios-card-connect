@@ -25,8 +25,26 @@ enum CardParser {
     )
 
     private static let companySuffixes = [
-        "a.ş.", "a.s.", "ltd.", "inc.", "corp.", "llc", "gmbh",
-        "limited", "şirketi", "san.", "tic.", "holding", "group"
+        "a.ş.", "a.s.", "anonim şirketi", "ltd.", "ltd.şti.", "ltdşti",
+        "şti.", "şirketi", "inc.", "corp.", "llc", "gmbh",
+        "limited", "san.", "tic.", "san.tic.", "holding", "group", "grup",
+        "teknoloji", "danışmanlık", "mühendislik", "yazılım", "bilişim"
+    ]
+
+    private static let titleKeywords: [String] = [
+        // C-suite / direktör
+        "ceo", "cfo", "cto", "coo", "cmo", "genel müdür", "genel koordinatör",
+        "direktör", "director", "başkan", "president", "vice president", "vp",
+        // Müdür
+        "müdür", "müdür yardımcısı", "manager", "yönetici",
+        // Mühendis / uzman
+        "mühendis", "engineer", "yazılım mühendisi", "senior", "lead", "kıdemli",
+        "uzman", "specialist", "danışman", "consultant", "analist", "analyst",
+        // Koordinatör / sorumlu
+        "koordinatör", "coordinator", "sorumlu", "supervisor",
+        // Diğer sık geçenler
+        "temsilci", "representative", "asistan", "assistant", "stajyer", "intern",
+        "avukat", "lawyer", "doktor", "doctor", "dr.", "prof.", "öğretim görevlisi"
     ]
 
     // MARK: - Public
@@ -102,7 +120,9 @@ enum CardParser {
             let normalized = normalizeAllCaps(line)
             if result.company.isEmpty, isCompanyLine(normalized) {
                 result.company = String(normalized.prefix(FieldLimits.maxCompany))
-            } else if result.title.isEmpty, !isAddressLine(normalized) {
+            } else if result.title.isEmpty, isTitleLine(normalized) {
+                result.title = cleanPunctuation(String(normalized.prefix(FieldLimits.maxTitle)))
+            } else if result.title.isEmpty, !isAddressLine(normalized), !looksLikeName(normalized) {
                 result.title = cleanPunctuation(String(normalized.prefix(FieldLimits.maxTitle)))
             } else {
                 addressParts.append(normalized)
@@ -142,6 +162,22 @@ enum CardParser {
     private static func isCompanyLine(_ line: String) -> Bool {
         let lower = line.lowercased()
         return companySuffixes.contains { lower.contains($0) }
+    }
+
+    private static func isTitleLine(_ line: String) -> Bool {
+        let lower = line.lowercased()
+        return titleKeywords.contains { lower.contains($0) }
+    }
+
+    /// İki veya daha az kelimeden oluşan, harf içeren ve şirket/adres olmayan satır
+    /// → isim satırı olarak görünür, başlık olmamalı
+    private static func looksLikeName(_ line: String) -> Bool {
+        let words = line.split(separator: " ")
+        guard words.count <= 3 else { return false }
+        let hasOnlyLetters = words.allSatisfy { word in
+            word.allSatisfy { $0.isLetter || $0.isWhitespace || $0 == "-" }
+        }
+        return hasOnlyLetters && !isCompanyLine(line) && !isAddressLine(line)
     }
 
     private static func isAddressLine(_ line: String) -> Bool {
