@@ -77,6 +77,7 @@ struct OnboardingView: View {
                 .fontWeight(.semibold)
                 .disabled(!privacyAccepted)
                 .opacity(privacyAccepted ? 1 : 0.4)
+                .accessibilityIdentifier("onboarding_next_button")
         } else {
             Color.clear.frame(width: 44, height: 44)
         }
@@ -168,6 +169,7 @@ private struct PrivacyPage: View {
             }
             .toggleStyle(.switch)
             .tint(.accentColor)
+            .accessibilityIdentifier("onboarding_kvkk_toggle")
             Spacer()
         }
         .padding(.horizontal, 32)
@@ -230,11 +232,13 @@ private struct ProfileSetupPage: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(isSaving)
+                    .accessibilityIdentifier("onboarding_complete_button")
 
                     Button("Şimdi Değil") {
                         onComplete()
                     }
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("onboarding_skip_button")
                 }
             }
             .padding(.horizontal, 24)
