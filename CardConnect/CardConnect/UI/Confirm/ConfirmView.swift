@@ -32,6 +32,7 @@ struct ConfirmView: View {
 
     var body: some View {
         List {
+            qrBanner
             photoSection
             nameSection
             phoneSection
@@ -69,6 +70,34 @@ struct ConfirmView: View {
     }
 
     // MARK: - Sections
+
+    @ViewBuilder
+    private var qrBanner: some View {
+        if sourceRaw == ContactSource.qrCode.rawValue {
+            HStack(spacing: 10) {
+                Image(systemName: "qrcode")
+                    .font(.title3)
+                    .foregroundStyle(.orange)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("QR Kod Kaynağı")
+                        .font(.subheadline.bold())
+                    Text("Veri QR koddan alındı. Lütfen bilgileri doğrulayın.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(Color.orange.opacity(0.4), lineWidth: 1)
+            )
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+        }
+    }
 
     @ViewBuilder
     private var photoSection: some View {
@@ -172,6 +201,9 @@ struct ConfirmView: View {
         phonesJSON  = encode(card.phones)
         emailsJSON  = encode(card.emails)
         photoJSON   = encode(paths.map(\.absoluteString))
+        if await dependencies.scanFlow.incomingVCard != nil {
+            sourceRaw = ContactSource.qrCode.rawValue
+        }
         hasLoaded   = true
     }
 
