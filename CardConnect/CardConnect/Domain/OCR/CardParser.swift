@@ -1,0 +1,130 @@
+// CardParser.swift
+// CardConnect
+// Android Bug #106–#115: faks hariç, dahili hariç, all-caps normalize, max 3 tel, 8192 clamp.
+
+import Foundation
+
+enum CardParser {
+
+    // MARK: - Patterns
+
+    private static let emailRegex = try! NSRegularExpression(
+        pattern: "[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}"
+    )
+    private static let phoneRegex = try! NSRegularExpression(
+        pattern: "(?:(?:\\+|00)\\d{1,3}[\\s.\\-]?)?(?:[\\(]?\\d[\\s.\\-]?){6,14}\\d"
+    )
+    private static let faxRegex = try! NSRegularExpression(
+        pattern: "(?i)(faks?|fax|\u{1F4E0}|f\\.?)[:\\s]"
+    )
+    private static let extRegex = try! NSRegularExpression(
+        pattern: "(?i)(ext\\.?|dahili|pbx)\\s*\\d+"
+    )
+
+    private static let companySuffixes = [
+        "a.ş.", "a.s.", "ltd.", "inc.", "corp.", "llc", "gmbh",
+        "limited", "şirketi", "san.", "tic.", "holding", "group"
+    ]
+
+    // MARK: - Public
+
+    static func parse(_ rawText: String) -> ParsedCard {
+        let text = String(rawText.prefix(FieldLimits.maxOCRInput))
+        let lines = text
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && $0 != "---" }
+
+        var result = ParsedCard()
+        var textLines: [String] = []
+        var phones: [String] = []
+        var emails: [String] = []
+
+        for line in lines {
+            if let email = firstMatch(emailRegex, in: line) {
+                emails.append(String(email.lowercased().prefix(FieldLimits.maxEmail)))
+                continue
+            }
+            if hasMatch(faxRegex, in: line) || hasMatch(extRegex, in: line) {
+                continue
+            }
+            if let phone = firstMatch(phoneRegex, in: line) {
+                phones.append(String(phone.trimmingCharacters(in: .whitespaces).prefix(FieldLimits.maxPhone)))
+                continue
+            }
+            textLines.append(line)
+        }
+
+        result.emails = emails
+        result.phones = Array(phones.prefix(3))
+        parseName(from: textLines, into: &result)
+        return result
+    }
+
+    // MARK: - Name / Title / Company
+
+    private static func parseName(from lines: [String], into result: inout ParsedCard) {
+        guard !lines.isEmpty else { return }
+        var rest = lines
+
+        let nameLine = normalizeAllCaps(rest.removeFirst())
+        let parts = nameLine.split(separator: " ").map(String.init)
+        if parts.count >= 2 {
+            result.firstName = String(parts[0].prefix(FieldLimits.maxName))
+            result.lastName  = String(parts.dropFirst().joined(separator: " ").prefix(FieldLimits.maxName))
+        } else {
+            result.firstName = String(nameLine.prefix(FieldLimits.maxName))
+        }
+
+        for line in rest {
+            let normalized = normalizeAllCaps(line)
+            if result.company.isEmpty, isCompanyLine(normalized) {
+                result.company = String(normalized.prefix(FieldLimits.maxCompany))
+            } else if result.title.isEmpty, !isAddressLine(normalized) {
+                result.title = cleanPunctuation(String(normalized.prefix(FieldLimits.maxTitle)))
+            } else if result.address.isEmpty {
+                result.address = String(normalized.prefix(FieldLimits.maxAddress))
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private static func normalizeAllCaps(_ line: String) -> String {
+        line.split(separator: " ").map { word -> String in
+            let s = String(word)
+            guard s.count > 1,
+                  s == s.uppercased(),
+                  s.rangeOfCharacter(from: .letters) != nil
+            else { return s }
+            return s.lowercased().capitalized
+        }.joined(separator: " ")
+    }
+
+    private static func isCompanyLine(_ line: String) -> Bool {
+        let lower = line.lowercased()
+        return companySuffixes.contains { lower.contains($0) }
+    }
+
+    private static func isAddressLine(_ line: String) -> Bool {
+        let lower = line.lowercased()
+        let keywords = ["sok.", "cad.", "mah.", "no:", "kat:", "blok", "apt", "st.", "ave.", "floor", "suite"]
+        return keywords.contains { lower.contains($0) }
+    }
+
+    private static func cleanPunctuation(_ s: String) -> String {
+        s.trimmingCharacters(in: .punctuationCharacters.union(.whitespaces))
+    }
+
+    private static func firstMatch(_ regex: NSRegularExpression, in line: String) -> String? {
+        let range = NSRange(line.startIndex..., in: line)
+        guard let m = regex.firstMatch(in: line, range: range),
+              let r = Range(m.range, in: line) else { return nil }
+        return String(line[r])
+    }
+
+    private static func hasMatch(_ regex: NSRegularExpression, in line: String) -> Bool {
+        let range = NSRange(line.startIndex..., in: line)
+        return regex.firstMatch(in: line, range: range) != nil
+    }
+}
