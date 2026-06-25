@@ -6,12 +6,21 @@ import SwiftUI
 struct RootNavigationView: View {
     @AppStorage("onboarding_done") private var onboardingDone = false
     @State private var path = NavigationPath()
+    @Environment(\.dependencies) private var dependencies
 
     var body: some View {
         if onboardingDone {
             NavigationStack(path: $path) {
                 HomeView()
                     .navigationDestination(for: AppRoute.self) { destination(for: $0) }
+            }
+            .task {
+                guard ProcessInfo.processInfo.arguments.contains("-UITestMockOCR") else { return }
+                var card = ParsedCard()
+                card.firstName = "Test"
+                card.lastName = "Kullanıcı"
+                await dependencies.scanFlow.setParsedCard(card)
+                path.append(AppRoute.confirm)
             }
         } else {
             OnboardingView {

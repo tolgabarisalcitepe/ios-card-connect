@@ -53,6 +53,7 @@ struct ConfirmView: View {
                 Button(isSaving ? "Kaydediliyor…" : "Kaydet") {
                     Task { await save() }
                 }
+                .accessibilityIdentifier("confirm_save_button")
                 .disabled(isSaving || firstName.trimmingCharacters(in: .whitespaces).isEmpty)
                 .fontWeight(.semibold)
             }
@@ -124,6 +125,7 @@ struct ConfirmView: View {
         Section("Kişi Bilgileri") {
             TextField("Ad *", text: $firstName)
                 .textContentType(.givenName)
+                .accessibilityIdentifier("confirm_first_name_field")
             TextField("Soyad", text: $lastName)
                 .textContentType(.familyName)
             TextField("Şirket", text: $company)
