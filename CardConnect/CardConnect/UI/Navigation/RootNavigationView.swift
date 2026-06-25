@@ -26,9 +26,9 @@ struct RootNavigationView: View {
         case .home:
             HomeView()
         case .camera:
-            Text("CameraView — Epic 1")
+            CameraView(path: $path)
         case .confirm:
-            Text("ConfirmView — Epic 1")
+            ConfirmView(path: $path)
         case .duplicate(let id):
             Text("DuplicateView — Epic 3: \(id)")
         case .eventMatch(let id):

@@ -14,9 +14,7 @@ struct HomeView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    // Camera navigation — Epic 1
-                } label: {
+                NavigationLink(value: AppRoute.camera) {
                     Image(systemName: "plus")
                 }
             }
@@ -31,7 +29,6 @@ struct HomeView: View {
                 .foregroundStyle(.secondary.opacity(0.3))
             Text("Henüz kartvizit yok")
                 .font(.title2.bold())
-                .foregroundStyle(.primary)
             Text("Kameranızı bir kartvizite tutarak başlayın.")
                 .font(.body)
                 .multilineTextAlignment(.center)
@@ -43,9 +40,7 @@ struct HomeView: View {
     }
 
     private var scanFAB: some View {
-        Button {
-            // Camera scan — Epic 1
-        } label: {
+        NavigationLink(value: AppRoute.camera) {
             Image(systemName: "camera.viewfinder")
                 .font(.title2.weight(.semibold))
                 .padding(18)
