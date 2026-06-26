@@ -167,9 +167,16 @@ struct MailComposeView: View {
 
     private func templateChipSelector(contact: Contact) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Şablon")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
+            HStack {
+                Text("Şablon")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                NavigationLink(value: AppRoute.templates) {
+                    Text("Şablonları Yönet")
+                        .font(.footnote)
+                }
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {

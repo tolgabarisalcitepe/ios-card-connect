@@ -92,6 +92,8 @@ struct RootNavigationView: View {
             MailComposeView(contactID: id)
         case .templateEdit(let id):
             TemplateEditView(templateID: id)
+        case .templates:
+            TemplatesView()
         case .profile:
             ProfileView()
         }
