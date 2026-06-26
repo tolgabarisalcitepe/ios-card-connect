@@ -6,19 +6,20 @@ import SwiftData
 
 enum EmailTemplateSeeder {
 
-    /// COUNT > 0 ise no-op; ilk çalışmada 5 varsayılan şablon ekler.
-    static func seedIfEmpty(in context: ModelContext) {
-        let count = (try? context.fetchCount(FetchDescriptor<EmailTemplate>())) ?? 0
-        guard count == 0 else { return }
-        for template in defaults { context.insert(template) }
-        try? context.save()
+    // MARK: - TemplateDefault (shared reset kaynak)
+
+    struct TemplateDefault {
+        let id: UUID
+        let name: String
+        let iconName: String
+        let subject: String
+        let body: String
+        let sortOrder: Int
     }
 
-    // MARK: - Default templates (sabit UUID — idempotent)
-
     // swiftlint:disable force_unwrapping
-    private static let defaults: [EmailTemplate] = [
-        EmailTemplate(
+    static let defaults: [TemplateDefault] = [
+        TemplateDefault(
             id: UUID(uuidString: "11111111-0000-0000-0000-000000000001")!,
             name: "Tanışma",
             iconName: "hand.wave",
@@ -32,10 +33,9 @@ enum EmailTemplateSeeder {
             [Benim Adım]
             [Ünvanım] · [Şirketim]
             """,
-            isDefault: true,
             sortOrder: 0
         ),
-        EmailTemplate(
+        TemplateDefault(
             id: UUID(uuidString: "11111111-0000-0000-0000-000000000002")!,
             name: "İş Birliği",
             iconName: "person.2",
@@ -49,10 +49,9 @@ enum EmailTemplateSeeder {
             [Benim Adım]
             [Ünvanım] · [Şirketim]
             """,
-            isDefault: true,
             sortOrder: 1
         ),
-        EmailTemplate(
+        TemplateDefault(
             id: UUID(uuidString: "11111111-0000-0000-0000-000000000003")!,
             name: "Bilgi Talebi",
             iconName: "questionmark.circle",
@@ -66,10 +65,9 @@ enum EmailTemplateSeeder {
             [Benim Adım]
             [Ünvanım] · [Şirketim]
             """,
-            isDefault: true,
             sortOrder: 2
         ),
-        EmailTemplate(
+        TemplateDefault(
             id: UUID(uuidString: "11111111-0000-0000-0000-000000000004")!,
             name: "Takip",
             iconName: "arrow.clockwise",
@@ -83,10 +81,9 @@ enum EmailTemplateSeeder {
             [Benim Adım]
             [Ünvanım] · [Şirketim]
             """,
-            isDefault: true,
             sortOrder: 3
         ),
-        EmailTemplate(
+        TemplateDefault(
             id: UUID(uuidString: "11111111-0000-0000-0000-000000000005")!,
             name: "Toplantı",
             iconName: "calendar",
@@ -100,9 +97,33 @@ enum EmailTemplateSeeder {
             [Benim Adım]
             [Ünvanım] · [Şirketim]
             """,
-            isDefault: true,
             sortOrder: 4
         ),
     ]
     // swiftlint:enable force_unwrapping
+
+    // MARK: - API
+
+    /// COUNT > 0 ise no-op; ilk çalışmada 5 varsayılan şablon ekler.
+    static func seedIfEmpty(in context: ModelContext) {
+        let count = (try? context.fetchCount(FetchDescriptor<EmailTemplate>())) ?? 0
+        guard count == 0 else { return }
+        for d in defaults {
+            context.insert(EmailTemplate(
+                id: d.id,
+                name: d.name,
+                iconName: d.iconName,
+                subject: d.subject,
+                body: d.body,
+                isDefault: true,
+                sortOrder: d.sortOrder
+            ))
+        }
+        try? context.save()
+    }
+
+    /// isDefault şablon için orijinal içeriği döner.
+    static func original(for id: UUID) -> TemplateDefault? {
+        defaults.first { $0.id == id }
+    }
 }
