@@ -12,6 +12,10 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Kartvizit fotoğraflarını galerinizden seçebilmek için erişim gerekiyor.</string>
 
+	<!-- Export compliance: app uses only system/exempt encryption (Keychain, TLS) -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
 	<!-- ATS: disable arbitrary loads (explicit, though false is default) -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
