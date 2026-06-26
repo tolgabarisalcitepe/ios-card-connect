@@ -24,6 +24,10 @@ struct CardConnectApp: App {
 
     private let dependencies: any DependencyContainer = LiveDependencyContainer()
 
+    init() {
+        CrashReporter.shared.start()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootNavigationView()
