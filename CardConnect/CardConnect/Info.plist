@@ -41,6 +41,12 @@
 		</dict>
 	</array>
 
+	<!-- Versioning: values come from MARKETING_VERSION / CURRENT_PROJECT_VERSION build settings -->
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+
 	<!-- UI keys (previously auto-generated from INFOPLIST_KEY_* build settings) -->
 	<key>UIApplicationSceneManifest</key>
 	<dict>
