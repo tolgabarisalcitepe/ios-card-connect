@@ -11,6 +11,7 @@ actor ScanFlowActor {
     private(set) var parsedCard: ParsedCard? = nil
     private(set) var contactID: UUID? = nil
     private(set) var incomingVCard: String? = nil
+    private(set) var incomingContact: Contact? = nil
 
     // MARK: - Mutations
 
@@ -34,6 +35,10 @@ actor ScanFlowActor {
         incomingVCard = vcard
     }
 
+    func setIncomingContact(_ contact: Contact?) {
+        incomingContact = contact
+    }
+
     // MARK: - Reset
 
     /// Flow sonunda atomik olarak çağrılır. Android Cat-2 (stale state) önlemi.
@@ -42,5 +47,6 @@ actor ScanFlowActor {
         parsedCard = nil
         contactID = nil
         incomingVCard = nil
+        incomingContact = nil
     }
 }

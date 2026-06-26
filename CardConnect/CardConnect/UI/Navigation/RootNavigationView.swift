@@ -2,11 +2,13 @@
 // CardConnect
 
 import SwiftUI
+import SwiftData
 
 struct RootNavigationView: View {
     @AppStorage("onboarding_done") private var onboardingDone = false
     @State private var path = NavigationPath()
     @Environment(\.dependencies) private var dependencies
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         if onboardingDone {
@@ -15,12 +17,19 @@ struct RootNavigationView: View {
                     .navigationDestination(for: AppRoute.self) { destination(for: $0) }
             }
             .task {
-                guard ProcessInfo.processInfo.arguments.contains("-UITestMockOCR") else { return }
-                var card = ParsedCard()
-                card.firstName = "Test"
-                card.lastName = "Kullanıcı"
-                await dependencies.scanFlow.setParsedCard(card)
-                path.append(AppRoute.confirm)
+                if ProcessInfo.processInfo.arguments.contains("-UITestMockOCR") {
+                    var card = ParsedCard()
+                    card.firstName = "Test"
+                    card.lastName = "Kullanıcı"
+                    await dependencies.scanFlow.setParsedCard(card)
+                    path.append(AppRoute.confirm)
+                } else if ProcessInfo.processInfo.arguments.contains("-UITestMockDuplicate") {
+                    let existing = Contact(source: .manual, firstName: "Mevcut", lastName: "Kişi", company: "ABC A.Ş.")
+                    modelContext.insert(existing)
+                    let incoming = Contact(source: .businessCard, firstName: "Mevcut", lastName: "Kişi", company: "Yeni A.Ş.")
+                    await dependencies.scanFlow.setIncomingContact(incoming)
+                    path.append(AppRoute.duplicate(contactID: existing.id))
+                }
             }
         } else {
             OnboardingView {
@@ -38,11 +47,8 @@ struct RootNavigationView: View {
             CameraView(path: $path)
         case .confirm:
             ConfirmView(path: $path)
-        case .duplicate(_):
-            // Note: existing/incoming Contact objects fetched by DuplicateViewModel in Epic 2
-            // Placeholder until ContactStore is available
-            Text("Duplikat görünümü Epic 2 sonrası aktif olacak")
-                .foregroundStyle(.secondary)
+        case .duplicate(let id):
+            DuplicateRouteView(existingContactID: id)
         case .eventMatch(let id):
             Text("EventMatchView — Epic 4: \(id)")
         case .detail(let id):

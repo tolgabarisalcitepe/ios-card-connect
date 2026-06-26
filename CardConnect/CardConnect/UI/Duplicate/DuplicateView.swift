@@ -4,9 +4,9 @@ import SwiftUI
 struct DuplicateView: View {
     let existing: Contact
     let incoming: Contact
-    @EnvironmentObject var dependencies: DependencyContainer
+    @Environment(\.dependencies) private var dependencies
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = DuplicateViewModel()
-    @Binding var navigationPath: [AppRoute]
 
     var body: some View {
         List {
@@ -55,7 +55,7 @@ struct DuplicateView: View {
                         incoming: incoming,
                         scanFlow: dependencies.scanFlow
                     )
-                    if ok { navigationPath = [] }
+                    if ok { dismiss() }
                 }
             } label: {
                 Label("Mevcut Kaydı Güncelle", systemImage: "arrow.triangle.merge")
@@ -68,7 +68,7 @@ struct DuplicateView: View {
             Button {
                 Task {
                     let ok = await viewModel.continueAsNew(scanFlow: dependencies.scanFlow)
-                    if ok { navigationPath = [] }
+                    if ok { dismiss() }
                 }
             } label: {
                 Label("Yeni Kayıt Oluştur", systemImage: "person.badge.plus")
