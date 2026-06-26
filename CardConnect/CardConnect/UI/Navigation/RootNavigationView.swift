@@ -29,6 +29,11 @@ struct RootNavigationView: View {
                     let incoming = Contact(source: .businessCard, firstName: "Mevcut", lastName: "Kişi", company: "Yeni A.Ş.")
                     await dependencies.scanFlow.setIncomingContact(incoming)
                     path.append(AppRoute.duplicate(contactID: existing.id))
+                } else if ProcessInfo.processInfo.arguments.contains("-UITestMockEventMatch") {
+                    let contact = Contact(source: .businessCard, firstName: "Test", lastName: "Kullanıcı", company: "Mock A.Ş.")
+                    modelContext.insert(contact)
+                    try? modelContext.save()
+                    path.append(AppRoute.eventMatch(contactID: contact.id))
                 }
             }
         } else {
