@@ -3,6 +3,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct MailComposeView: View {
 
@@ -17,6 +18,13 @@ struct MailComposeView: View {
     @State private var resolvedSubject = ""
     @State private var resolvedBody = ""
     @State private var missingVars: [String] = []
+    @State private var includeInvite = false
+    @State private var meetingDate: Date = {
+        let cal = Calendar.current
+        let tomorrow = cal.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+        return cal.date(bySettingHour: 10, minute: 0, second: 0, of: tomorrow) ?? tomorrow
+    }()
+    @State private var calendarPermissionDenied = false
 
     private var contact: Contact? {
         allContacts.first { $0.id == contactID }
@@ -53,6 +61,16 @@ struct MailComposeView: View {
         .onChange(of: profile.fullName) {
             if let t = selectedTemplate { applyTemplate(t, contact: contact) }
         }
+        .alert("Takvim İzni Gerekiyor", isPresented: $calendarPermissionDenied) {
+            Button("Ayarlara Git") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("İptal", role: .cancel) {}
+        } message: {
+            Text("Toplantı daveti eklemek için takvim erişimine izin verin.")
+        }
     }
 
     // MARK: - Main content
@@ -74,6 +92,9 @@ struct MailComposeView: View {
                 if !missingVars.isEmpty {
                     missingVarsBanner
                 }
+
+                // Toplantı daveti toggle + tarih seçici
+                meetingInviteSection
 
                 // Çözümlenmiş konu + gövde önizleme
                 if selectedTemplate != nil {
@@ -122,6 +143,37 @@ struct MailComposeView: View {
                 .padding(.horizontal, 2)
                 .padding(.vertical, 4)
             }
+        }
+    }
+
+    // MARK: - Meeting invite section
+
+    private var meetingInviteSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Toggle("Toplantı Daveti Ekle", isOn: $includeInvite)
+                .onChange(of: includeInvite) { _, newValue in
+                    if newValue { Task { await requestCalendarAccess() } }
+                }
+
+            if includeInvite {
+                DatePicker(
+                    "Tarih ve Saat",
+                    selection: $meetingDate,
+                    in: Date()...,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .datePickerStyle(.compact)
+            }
+        }
+        .padding()
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func requestCalendarAccess() async {
+        let granted = await dependencies.calendarService.requestAccess()
+        if !granted {
+            includeInvite = false
+            calendarPermissionDenied = true
         }
     }
 
