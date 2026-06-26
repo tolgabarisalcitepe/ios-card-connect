@@ -9,6 +9,7 @@ protocol DependencyContainer {
     var userProfileStore: UserProfileStore { get }
     var scanFlow: ScanFlowActor { get }
     var permissionCoordinator: PermissionCoordinator { get }
+    var calendarService: CalendarService { get }
     // contactStore — Epic 2'de eklenir
 }
 
@@ -18,11 +19,13 @@ final class LiveDependencyContainer: DependencyContainer {
     let userProfileStore: UserProfileStore
     let scanFlow: ScanFlowActor
     let permissionCoordinator: PermissionCoordinator
+    let calendarService: CalendarService
 
     init() {
         self.userProfileStore = UserProfileStore()
         self.scanFlow = ScanFlowActor()
         self.permissionCoordinator = PermissionCoordinator()
+        self.calendarService = CalendarService()
     }
 }
 
