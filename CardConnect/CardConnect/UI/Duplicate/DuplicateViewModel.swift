@@ -60,10 +60,20 @@ final class DuplicateViewModel: ObservableObject {
     /// Duplikatı görmezden gelir, yeni kayıt olarak devam eder.
     /// DB insert Epic 2'de tamamlanacak.
     @discardableResult
-    func continueAsNew(scanFlow: ScanFlowActor) async -> Bool {
+    func continueAsNew(
+        incoming: Contact,
+        modelContext: ModelContext,
+        scanFlow: ScanFlowActor
+    ) async -> Bool {
         isLoading = true
         defer { isLoading = false }
-        // TODO: Epic 2 — await contactStore.insert(incoming)
+        do {
+            modelContext.insert(incoming)
+            try modelContext.save()
+        } catch {
+            errorMessage = "Kayıt oluşturulamadı."
+            return false
+        }
         await scanFlow.reset()
         return true
     }

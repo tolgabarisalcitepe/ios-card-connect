@@ -69,7 +69,11 @@ struct DuplicateView: View {
 
             Button {
                 Task {
-                    let ok = await viewModel.continueAsNew(scanFlow: dependencies.scanFlow)
+                    let ok = await viewModel.continueAsNew(
+                        incoming: incoming,
+                        modelContext: modelContext,
+                        scanFlow: dependencies.scanFlow
+                    )
                     if ok { dismiss() }
                 }
             } label: {
