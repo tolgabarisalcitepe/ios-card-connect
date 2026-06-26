@@ -3,10 +3,6 @@ import Foundation
 /// Kartvizit duplikat tespiti — saf fonksiyon, DB bağımlılığı yok.
 struct DuplicateDetector {
 
-    /// `candidates` listesi içinde `incoming` ile eşleşen ilk kişiyi döner.
-    /// Eşleşme önceliği: (1) name+company → (2) phone → (3) email.
-    /// Boş alanlar eşleşme kriteri olarak kullanılmaz.
-    /// Self-match engellenir (aynı id).
     @discardableResult
     static func findDuplicate(
         incoming: Contact,
@@ -15,7 +11,6 @@ struct DuplicateDetector {
         for candidate in candidates {
             guard candidate.id != incoming.id else { continue }
 
-            // 1. Name + company exact match
             let incomingName = incoming.fullName.trimmingCharacters(in: .whitespaces)
             let candidateName = candidate.fullName.trimmingCharacters(in: .whitespaces)
             let incomingCompany = incoming.company.trimmingCharacters(in: .whitespaces)
@@ -28,35 +23,64 @@ struct DuplicateDetector {
                 return candidate
             }
 
-            // 2. Phone intersection
-            let incomingPhones = Set(incoming.phones.map { $0.normalizedPhone })
-                .filter { !$0.isEmpty }
-            let candidatePhones = Set(candidate.phones.map { $0.normalizedPhone })
-                .filter { !$0.isEmpty }
+            let incomingPhones = Set(incoming.phones.map { $0.normalizedPhone }).filter { !$0.isEmpty }
+            let candidatePhones = Set(candidate.phones.map { $0.normalizedPhone }).filter { !$0.isEmpty }
 
-            if !incomingPhones.isEmpty,
-               !incomingPhones.isDisjoint(with: candidatePhones) {
+            if !incomingPhones.isEmpty, !incomingPhones.isDisjoint(with: candidatePhones) {
                 return candidate
             }
 
-            // 3. Email intersection (case-insensitive)
-            let incomingEmails = Set(incoming.emails.map { $0.lowercased() })
-                .filter { !$0.isEmpty }
-            let candidateEmails = Set(candidate.emails.map { $0.lowercased() })
-                .filter { !$0.isEmpty }
+            let incomingEmails = Set(incoming.emails.map { $0.lowercased() }).filter { !$0.isEmpty }
+            let candidateEmails = Set(candidate.emails.map { $0.lowercased() }).filter { !$0.isEmpty }
 
-            if !incomingEmails.isEmpty,
-               !incomingEmails.isDisjoint(with: candidateEmails) {
+            if !incomingEmails.isEmpty, !incomingEmails.isDisjoint(with: candidateEmails) {
                 return candidate
             }
         }
         return nil
     }
+
+    static func merge(existing: Contact, incoming: Contact) -> Contact {
+        existing.firstName  = nonEmpty(existing.firstName,  fallback: incoming.firstName)
+        existing.lastName   = nonEmpty(existing.lastName,   fallback: incoming.lastName)
+        existing.company    = nonEmpty(existing.company,    fallback: incoming.company)
+        existing.title      = nonEmpty(existing.title,      fallback: incoming.title)
+        existing.linkedin   = nonEmpty(existing.linkedin,   fallback: incoming.linkedin)
+        existing.address    = nonEmpty(existing.address,    fallback: incoming.address)
+
+        existing.phones     = unionDistinct(existing.phones,     incoming.phones)
+        existing.emails     = unionDistinct(existing.emails,     incoming.emails)
+        existing.photoPaths = unionDistinct(existing.photoPaths, incoming.photoPaths)
+
+        existing.notes      = mergeNotes(existing.notes, incoming.notes)
+
+        existing.eventId         = existing.eventId         ?? incoming.eventId
+        existing.eventName       = existing.eventName       ?? incoming.eventName
+        existing.deviceContactId = existing.deviceContactId ?? incoming.deviceContactId
+
+        existing.updatedAt = Date()
+        return existing
+    }
+
+    private static func nonEmpty(_ primary: String, fallback: String) -> String {
+        primary.trimmingCharacters(in: .whitespaces).isEmpty ? fallback : primary
+    }
+
+    private static func unionDistinct(_ primary: [String], _ secondary: [String]) -> [String] {
+        var seen = Set<String>()
+        return (primary + secondary).filter { seen.insert($0).inserted }
+    }
+
+    private static func mergeNotes(_ existing: String, _ incoming: String) -> String {
+        let trimmed = incoming.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return existing }
+        guard !existing.contains(trimmed) else { return existing }
+        if existing.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return trimmed }
+        return existing + "\n" + trimmed
+    }
 }
 
-// MARK: - Phone normalization helper
 private extension String {
-    /// Telefon numarasından boşluk, tire, parantez ve artı kaldırır.
     var normalizedPhone: String {
         self.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
     }
