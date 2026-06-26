@@ -7,14 +7,14 @@ import PhotosUI
 struct ProfileView: View {
 
     @Environment(\.dependencies) private var dependencies
+    @StateObject private var viewModel = ProfileViewModel()
 
-    @State private var profile = UserProfile()
     @State private var avatarItem: PhotosPickerItem?
     @State private var avatarImage: Image?
     @State private var showQR = false
 
     private var isProfileEmpty: Bool {
-        profile.firstName.isEmpty && profile.lastName.isEmpty
+        viewModel.profile.firstName.isEmpty && viewModel.profile.lastName.isEmpty
     }
 
     // MARK: - Body
@@ -29,6 +29,12 @@ struct ProfileView: View {
         .navigationTitle("Profil")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Kaydet") {
+                    Task { await viewModel.save(to: dependencies.userProfileStore) }
+                }
+                .disabled(viewModel.isSaving)
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showQR = true
@@ -42,8 +48,16 @@ struct ProfileView: View {
             Text("QR Kodu — #132")
                 .presentationDetents([.medium])
         }
+        .alert("Hata", isPresented: .init(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("Tamam", role: .cancel) { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
         .task {
-            profile = await dependencies.userProfileStore.load()
+            await viewModel.load(from: dependencies.userProfileStore)
             loadAvatarIfNeeded()
         }
         .onChange(of: avatarItem) { _, newItem in
@@ -84,29 +98,29 @@ struct ProfileView: View {
                 .frame(width: 90, height: 90)
                 .clipShape(Circle())
         } else {
-            InitialsAvatarView(fullName: profile.fullName, size: 90)
+            InitialsAvatarView(fullName: viewModel.profile.fullName, size: 90)
         }
     }
 
     private var basicInfoSection: some View {
         Section("Kişisel Bilgiler") {
-            TextField("Ad", text: $profile.firstName)
+            TextField("Ad", text: $viewModel.profile.firstName)
                 .textContentType(.givenName)
-            TextField("Soyad", text: $profile.lastName)
+            TextField("Soyad", text: $viewModel.profile.lastName)
                 .textContentType(.familyName)
-            TextField("Şirket", text: $profile.company)
+            TextField("Şirket", text: $viewModel.profile.company)
                 .textContentType(.organizationName)
-            TextField("Ünvan", text: $profile.title)
+            TextField("Ünvan", text: $viewModel.profile.title)
                 .textContentType(.jobTitle)
         }
     }
 
     private var contactSection: some View {
         Section("İletişim") {
-            TextField("Telefon", text: $profile.phone)
+            TextField("Telefon", text: $viewModel.profile.phone)
                 .keyboardType(.phonePad)
                 .textContentType(.telephoneNumber)
-            TextField("E-posta", text: $profile.email)
+            TextField("E-posta", text: $viewModel.profile.email)
                 .keyboardType(.emailAddress)
                 .textInputAutocapitalization(.never)
                 .textContentType(.emailAddress)
@@ -115,10 +129,10 @@ struct ProfileView: View {
 
     private var socialSection: some View {
         Section("Sosyal") {
-            TextField("LinkedIn URL", text: $profile.linkedin)
+            TextField("LinkedIn URL", text: $viewModel.profile.linkedin)
                 .keyboardType(.URL)
                 .textInputAutocapitalization(.never)
-            TextField("Web Sitesi", text: $profile.website)
+            TextField("Web Sitesi", text: $viewModel.profile.website)
                 .keyboardType(.URL)
                 .textInputAutocapitalization(.never)
         }
@@ -127,8 +141,8 @@ struct ProfileView: View {
     // MARK: - Avatar helpers
 
     private func loadAvatarIfNeeded() {
-        guard !profile.avatarPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: profile.avatarPath)
+        guard !viewModel.profile.avatarPath.isEmpty else { return }
+        let url = URL(fileURLWithPath: viewModel.profile.avatarPath)
         guard let data = try? Data(contentsOf: url),
               let uiImage = UIImage(data: data) else { return }
         avatarImage = Image(uiImage: uiImage)
@@ -140,7 +154,7 @@ struct ProfileView: View {
               let uiImage = UIImage(data: data) else { return }
         avatarImage = Image(uiImage: uiImage)
         if let savedPath = saveAvatar(data: data) {
-            profile.avatarPath = savedPath
+            viewModel.profile.avatarPath = savedPath
         }
     }
 
