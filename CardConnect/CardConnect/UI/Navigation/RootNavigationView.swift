@@ -58,6 +58,7 @@ struct RootNavigationView: View {
                 }
             }
         }
+        .screenshotProtected()
         .alert("Güvenlik Uyarısı", isPresented: $showJailbreakAlert) {
             Button("Devam Et", role: .cancel) { showJailbreakAlert = false }
             Button("Çıkış", role: .destructive) { exit(0) }
