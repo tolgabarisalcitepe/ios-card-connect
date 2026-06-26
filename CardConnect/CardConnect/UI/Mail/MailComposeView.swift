@@ -62,6 +62,27 @@ struct MailComposeView: View {
         .onChange(of: profile.fullName) {
             if let t = selectedTemplate { applyTemplate(t, contact: contact) }
         }
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Gönder") { sendMail() }
+                    .disabled(contact?.emails.isEmpty ?? true || selectedTemplate == nil)
+            }
+        }
+        .sheet(isPresented: $viewModel.showMailCompose) {
+            if let contact {
+                MailComposeRepresentable(
+                    recipients: contact.emails,
+                    subject: resolvedSubject,
+                    body: resolvedBody,
+                    icsData: viewModel.mailComposeICSData
+                ) { result in
+                    viewModel.handleMailResult(result)
+                }
+            }
+        }
+        .sheet(isPresented: $viewModel.showActivity) {
+            ActivityView(activityItems: viewModel.activityItemsBuffer)
+        }
         .alert("Takvim İzni Gerekiyor", isPresented: $calendarPermissionDenied) {
             Button("Ayarlara Git") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -72,6 +93,25 @@ struct MailComposeView: View {
         } message: {
             Text("Toplantı daveti eklemek için takvim erişimine izin verin.")
         }
+        .alert("Mail Uygulaması Bulunamadı", isPresented: $viewModel.mailUnavailable) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text("E-posta göndermek için cihazınızda bir mail uygulaması yapılandırın.")
+        }
+    }
+
+    private func sendMail() {
+        guard let contact else { return }
+        viewModel.prepareSend(
+            contactID: contactID,
+            recipients: contact.emails,
+            subject: resolvedSubject,
+            body: resolvedBody,
+            includeInvite: includeInvite,
+            meetingDate: meetingDate,
+            organizerName: profile.fullName,
+            organizerEmail: profile.email
+        )
     }
 
     // MARK: - Main content
@@ -287,6 +327,18 @@ struct MailComposeView: View {
         var seen = Set<String>()
         missingVars = combined.filter { seen.insert($0).inserted }
     }
+}
+
+// MARK: - ActivityView
+
+private struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 // MARK: - TemplateChipButton
