@@ -22,8 +22,8 @@ final class ContactMergeTests: XCTestCase {
         deviceContactId: String? = nil
     ) -> Contact {
         let c = Contact(
-            source: "businessCard",
-            status: "active",
+            source: .businessCard,
+            status: .new,
             firstName: firstName,
             lastName: lastName,
             company: company,
