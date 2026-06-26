@@ -11,4 +11,5 @@ enum AppRoute: Hashable {
     case duplicate(contactID: UUID)
     case eventMatch(contactID: UUID)
     case detail(contactID: UUID)
+    case mailCompose(contactID: UUID)
 }

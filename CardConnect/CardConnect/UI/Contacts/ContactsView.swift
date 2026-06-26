@@ -9,6 +9,8 @@ struct ContactsView: View {
     @State private var searchText = ""
     @Environment(\.modelContext) private var modelContext
     @State private var contactToDelete: Contact?
+    @AppStorage("contacts_swipe_hint_shown") private var swipeHintShown = false
+    @State private var showSwipeHint = false
 
     var body: some View {
         Group {
@@ -31,6 +33,14 @@ struct ContactsView: View {
         }
         .onAppear {
             viewModel.update(query: searchText, contacts: contacts)
+            if !swipeHintShown && !contacts.isEmpty {
+                showSwipeHint = true
+                swipeHintShown = true
+                Task {
+                    try? await Task.sleep(for: .seconds(2))
+                    showSwipeHint = false
+                }
+            }
         }
         .confirmationDialog(
             "Bu kişiyi silmek istediğinden emin misin?",
@@ -58,6 +68,22 @@ struct ContactsView: View {
         } message: {
             Text(viewModel.deleteError ?? "")
         }
+        .safeAreaInset(edge: .bottom) {
+            if showSwipeHint {
+                HStack(spacing: 8) {
+                    Image(systemName: "hand.draw")
+                    Text("Aksiyonlar için sola veya sağa kaydır")
+                        .font(.caption)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.regularMaterial)
+                .clipShape(Capsule())
+                .padding(.bottom, 8)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut, value: showSwipeHint)
         .accessibilityIdentifier("contacts_view")
     }
 
@@ -76,6 +102,26 @@ struct ContactsView: View {
                     Label("Sil", systemImage: "trash")
                 }
                 .accessibilityIdentifier("contact_delete_swipe")
+            }
+            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                if !contact.linkedin.isEmpty,
+                   URLValidator.isValidLinkedIn(contact.linkedin),
+                   let url = URL(string: contact.linkedin) {
+                    Button {
+                        UIApplication.shared.open(url)
+                    } label: {
+                        Label("LinkedIn", systemImage: "link")
+                    }
+                    .tint(.teal)
+                    .accessibilityIdentifier("contact_linkedin_swipe")
+                }
+                if !contact.emails.isEmpty {
+                    NavigationLink(value: AppRoute.mailCompose(contactID: contact.id)) {
+                        Label("Mail", systemImage: "envelope")
+                    }
+                    .tint(.blue)
+                    .accessibilityIdentifier("contact_mail_swipe")
+                }
             }
         }
         .listStyle(.plain)
