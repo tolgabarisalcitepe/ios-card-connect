@@ -10,4 +10,5 @@ enum AppRoute: Hashable {
     case confirm
     case duplicate(contactID: UUID)
     case eventMatch(contactID: UUID)
+    case detail(contactID: UUID)
 }

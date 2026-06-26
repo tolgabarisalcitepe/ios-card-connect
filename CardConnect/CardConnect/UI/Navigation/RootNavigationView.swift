@@ -45,6 +45,8 @@ struct RootNavigationView: View {
                 .foregroundStyle(.secondary)
         case .eventMatch(let id):
             Text("EventMatchView — Epic 4: \(id)")
+        case .detail(let id):
+            Text("DetailView — Epic 2 #96: \(id)")
         }
     }
 }
