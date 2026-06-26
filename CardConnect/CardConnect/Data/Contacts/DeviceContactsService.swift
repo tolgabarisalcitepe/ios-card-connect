@@ -107,11 +107,30 @@ actor DeviceContactsService {
         }
     }
 
-    // MARK: - Delete (stub — #105)
+    // MARK: - Delete
 
-    /// TODO: #105 — deviceContactId ile CNContact'ı bul ve sil.
+    /// Rehberdeki karşılığı siler; bulunamazsa no-op (idempotent).
     func delete(deviceContactId: String) throws {
-        // Implemented in #105
+        guard !deviceContactId.isEmpty else { return }
+        try requireAuthorization()
+
+        let keys: [CNKeyDescriptor] = [CNContactIdentifierKey as CNKeyDescriptor]
+        let existing: CNContact
+        do {
+            existing = try store.unifiedContact(withIdentifier: deviceContactId, keysToFetch: keys)
+        } catch {
+            // Bulunamadı — idempotent, no-op.
+            return
+        }
+
+        guard let mutable = existing.mutableCopy() as? CNMutableContact else { return }
+        let request = CNSaveRequest()
+        request.delete(mutable)
+        do {
+            try store.execute(request)
+        } catch {
+            throw DeviceContactsError.saveFailed(error)
+        }
     }
 
     // MARK: - CNMutableContact mapping
