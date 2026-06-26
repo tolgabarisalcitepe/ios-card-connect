@@ -133,6 +133,22 @@ struct DetailView: View {
             }
         }
         .navigationTitle(contact.fullName.isEmpty ? "Kişi Detayı" : contact.fullName)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                if let url = try? VCardExporter.writeToTempFile(contact: contact) {
+                    ShareLink(
+                        item: url,
+                        preview: SharePreview(
+                            contact.fullName.isEmpty ? "Kişi" : contact.fullName,
+                            image: Image(systemName: "person.crop.circle")
+                        )
+                    ) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .accessibilityIdentifier("detail_share_button")
+                }
+            }
+        }
         .fullScreenCover(isPresented: Binding(
             get: { selectedPhotoPath != nil },
             set: { if !$0 { selectedPhotoPath = nil } }
