@@ -70,6 +70,12 @@ struct ContactEditView: View {
         } message: {
             Text(viewModel.saveError ?? "")
         }
+        .alert("Rehber İzni Gerekli", isPresented: $viewModel.showSettingsAlert) {
+            Button("Ayarlara Git") { viewModel.openSettings() }
+            Button("İptal", role: .cancel) {}
+        } message: {
+            Text("Kişiyi rehbere eklemek için Ayarlar'dan rehber iznini açın.")
+        }
         .accessibilityIdentifier("edit_view")
     }
 

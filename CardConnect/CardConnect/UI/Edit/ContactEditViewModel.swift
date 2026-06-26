@@ -1,10 +1,12 @@
 import Foundation
 import SwiftData
+import UIKit
 
 @MainActor
 final class ContactEditViewModel: ObservableObject {
     @Published var isSaving = false
     @Published var saveError: String?
+    @Published var showSettingsAlert = false
 
     // MARK: - Save
 
@@ -44,14 +46,26 @@ final class ContactEditViewModel: ObservableObject {
             try modelContext.save()
             if contact.deviceContactId != nil {
                 let deviceService = DeviceContactsService()
-                try? await deviceService.update(contact)
-                // Failure is non-fatal — SwiftData record is already saved
+                do {
+                    try await deviceService.update(contact)
+                } catch DeviceContactsService.DeviceContactsError.permissionDenied {
+                    showSettingsAlert = true
+                } catch {
+                    // Other failures are non-fatal — SwiftData record is already saved
+                }
             }
             return true
         } catch {
             saveError = "Kayıt sırasında hata oluştu."
             return false
         }
+    }
+
+    // MARK: - Settings redirect
+
+    func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     // MARK: - Validation
