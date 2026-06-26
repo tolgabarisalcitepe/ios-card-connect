@@ -34,6 +34,17 @@ struct RootNavigationView: View {
                     modelContext.insert(contact)
                     try? modelContext.save()
                     path.append(AppRoute.eventMatch(contactID: contact.id))
+                } else if ProcessInfo.processInfo.arguments.contains("-UITestMockMailCompose") {
+                    let contact = Contact(
+                        source: .businessCard,
+                        firstName: "Test",
+                        lastName: "Kullanıcı",
+                        company: "Mock A.Ş.",
+                        emails: ["test@example.com"]
+                    )
+                    modelContext.insert(contact)
+                    try? modelContext.save()
+                    path.append(AppRoute.mailCompose(contactID: contact.id))
                 }
             }
         } else {

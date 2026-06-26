@@ -143,6 +143,7 @@ struct MailComposeView: View {
                 }
             }
             .padding()
+            .accessibilityIdentifier("mail_compose_view")
         }
     }
 
@@ -179,6 +180,7 @@ struct MailComposeView: View {
                         ) {
                             applyTemplate(template, contact: contact)
                         }
+                        .accessibilityIdentifier("template_chip_\(template.name)")
                     }
                 }
                 .padding(.horizontal, 2)
@@ -307,6 +309,7 @@ struct MailComposeView: View {
                 Text(resolvedBody)
                     .font(.body)
                     .foregroundStyle(.primary)
+                    .accessibilityIdentifier("mail_resolved_body")
             }
         }
         .padding()
