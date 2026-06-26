@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import SwiftData
 
 @MainActor
 final class DuplicateViewModel: ObservableObject {
@@ -38,13 +39,20 @@ final class DuplicateViewModel: ObservableObject {
     func mergeAndContinue(
         existing: Contact,
         incoming: Contact,
+        modelContext: ModelContext,
         scanFlow: ScanFlowActor
     ) async -> Bool {
         isLoading = true
         defer { isLoading = false }
         _ = DuplicateDetector.merge(existing: existing, incoming: incoming)
-        // TODO: Epic 2 — await contactStore.update(existing)
-        // TODO: Epic 2 — await contactStore.delete(incoming)
+        do {
+            try modelContext.save()
+            modelContext.delete(incoming)
+            try modelContext.save()
+        } catch {
+            errorMessage = "Kayıt güncellenemedi."
+            return false
+        }
         await scanFlow.reset()
         return true
     }

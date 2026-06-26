@@ -6,6 +6,7 @@ struct DuplicateView: View {
     let incoming: Contact
     @Environment(\.dependencies) private var dependencies
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = DuplicateViewModel()
 
     var body: some View {
@@ -53,6 +54,7 @@ struct DuplicateView: View {
                     let ok = await viewModel.mergeAndContinue(
                         existing: existing,
                         incoming: incoming,
+                        modelContext: modelContext,
                         scanFlow: dependencies.scanFlow
                     )
                     if ok { dismiss() }
