@@ -28,8 +28,23 @@ actor ContactStore: ContactStoreProtocol {
         )
         descriptor.fetchLimit = 1
         guard let contact = try modelContext.fetch(descriptor).first else { return }
+
+        // Snapshot before deletion
+        let photoPaths     = contact.photoPaths
+        let contactID      = contact.id
+        let deviceContactId = contact.deviceContactId
+
         modelContext.delete(contact)
         try modelContext.save()
+
+        // Disk cleanup: photos + ICS (best-effort, non-throwing)
+        PhotoStorage.deletePhotos(paths: photoPaths)
+        PhotoStorage.deleteICS(contactID: contactID)
+
+        // CNContact cleanup (best-effort)
+        if let dcId = deviceContactId, !dcId.isEmpty {
+            try? DeviceContactsService().delete(deviceContactId: dcId)
+        }
     }
 
     // MARK: - fetchAll
