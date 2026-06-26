@@ -16,6 +16,7 @@ struct MailComposeView: View {
     @State private var selectedTemplate: EmailTemplate?
     @State private var resolvedSubject = ""
     @State private var resolvedBody = ""
+    @State private var missingVars: [String] = []
 
     private var contact: Contact? {
         allContacts.first { $0.id == contactID }
@@ -69,6 +70,11 @@ struct MailComposeView: View {
                     templateChipSelector(contact: contact)
                 }
 
+                // Eksik değişken uyarısı
+                if !missingVars.isEmpty {
+                    missingVarsBanner
+                }
+
                 // Çözümlenmiş konu + gövde önizleme
                 if selectedTemplate != nil {
                     resolvedPreview
@@ -119,6 +125,21 @@ struct MailComposeView: View {
         }
     }
 
+    // MARK: - Missing vars banner
+
+    private var missingVarsBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            Text("Eksik değişkenler: \(missingVars.joined(separator: ", "))")
+                .font(.footnote)
+                .foregroundStyle(.primary)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+    }
+
     // MARK: - Resolved preview
 
     private var resolvedPreview: some View {
@@ -157,6 +178,10 @@ struct MailComposeView: View {
         resolvedSubject = resolver.resolveSubject(template.subject)
         resolvedBody = resolver.resolveBody(template.body)
         selectedTemplate = template
+        let combined = resolver.findMissingVars(in: template.subject)
+            + resolver.findMissingVars(in: template.body)
+        var seen = Set<String>()
+        missingVars = combined.filter { seen.insert($0).inserted }
     }
 }
 
