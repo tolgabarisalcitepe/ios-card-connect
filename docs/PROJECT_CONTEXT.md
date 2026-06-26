@@ -229,3 +229,65 @@ Yeni bir özellik önerildiğinde aşağıdaki sırayla değerlendirilir:
 5. Bakım maliyetini artırıyor mu?
 
 Bu filtreyi geçemeyen özellikler MVP kapsamına alınmaz.
+# Excluded Directories
+
+The following directories are considered generated artifacts,
+third-party dependencies or build outputs.
+
+Never analyze these folders unless the user explicitly requests it.
+
+## Node
+
+node_modules/
+.npm/
+
+## React Native
+
+android/.gradle/
+android/build/
+android/app/build/
+
+ios/build/
+ios/Pods/
+ios/DerivedData/
+
+## Expo
+
+.expo/
+
+## Gradle
+
+.gradle/
+
+## CocoaPods
+
+Pods/
+
+## Xcode
+
+DerivedData/
+
+## Package Managers
+
+vendor/
+
+## Generated Files
+
+dist/
+build/
+out/
+coverage/
+
+## Cache
+
+.cache/
+tmp/
+
+## IDE
+
+.idea/
+.vscode/
+
+## Gitßß
+
+.git/
