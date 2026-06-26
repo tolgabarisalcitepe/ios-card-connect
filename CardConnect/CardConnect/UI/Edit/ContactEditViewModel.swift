@@ -42,7 +42,11 @@ final class ContactEditViewModel: ObservableObject {
 
         do {
             try modelContext.save()
-            // TODO: Bug #133 — if contact.deviceContactId != nil → DeviceContactsService.update(contact)
+            if contact.deviceContactId != nil {
+                let deviceService = DeviceContactsService()
+                try? await deviceService.update(contact)
+                // Failure is non-fatal — SwiftData record is already saved
+            }
             return true
         } catch {
             saveError = "Kayıt sırasında hata oluştu."
