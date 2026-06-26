@@ -5,23 +5,38 @@ struct ContactsView: View {
     @Query(sort: \Contact.updatedAt, order: .reverse)
     private var contacts: [Contact]
 
+    @StateObject private var viewModel = ContactsViewModel()
+    @State private var searchText = ""
+
     var body: some View {
         Group {
             if contacts.isEmpty {
-                emptyState
+                allEmptyState
+            } else if viewModel.displayedContacts.isEmpty {
+                searchEmptyState
             } else {
                 list
             }
         }
         .navigationTitle("Kişiler")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText, prompt: "Kişi ara")
+        .onChange(of: searchText) { _, newValue in
+            viewModel.update(query: newValue, contacts: contacts)
+        }
+        .onChange(of: contacts) { _, newValue in
+            viewModel.update(query: searchText, contacts: newValue)
+        }
+        .onAppear {
+            viewModel.update(query: searchText, contacts: contacts)
+        }
         .accessibilityIdentifier("contacts_view")
     }
 
     // MARK: - List
 
     private var list: some View {
-        List(contacts) { contact in
+        List(viewModel.displayedContacts) { contact in
             NavigationLink(value: AppRoute.detail(contactID: contact.id)) {
                 ContactRowView(contact: contact)
             }
@@ -30,9 +45,9 @@ struct ContactsView: View {
         .listStyle(.plain)
     }
 
-    // MARK: - Empty state
+    // MARK: - Empty states
 
-    private var emptyState: some View {
+    private var allEmptyState: some View {
         ContentUnavailableView {
             Label("Henüz kişi yok", systemImage: "person.crop.rectangle.stack")
         } description: {
@@ -44,6 +59,11 @@ struct ContactsView: View {
             .buttonStyle(.borderedProminent)
         }
         .accessibilityIdentifier("contacts_empty_state")
+    }
+
+    private var searchEmptyState: some View {
+        ContentUnavailableView.search(text: searchText)
+            .accessibilityIdentifier("contacts_search_empty_state")
     }
 }
 
