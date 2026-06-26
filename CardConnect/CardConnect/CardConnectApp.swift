@@ -13,7 +13,9 @@ struct CardConnectApp: App {
 
     private let modelContainer: ModelContainer = {
         do {
-            return try SwiftDataStack.makeContainer()
+            let container = try SwiftDataStack.makeContainer()
+            EmailTemplateSeeder.seedIfEmpty(in: container.mainContext)
+            return container
         } catch {
             fatalError("SwiftData container başlatılamadı: \(error)")
         }
