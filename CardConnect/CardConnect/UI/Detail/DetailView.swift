@@ -5,6 +5,7 @@ struct DetailView: View {
     let contactID: UUID
 
     @Query private var contacts: [Contact]
+    @State private var selectedPhotoPath: String?
 
     init(contactID: UUID) {
         self.contactID = contactID
@@ -36,6 +37,31 @@ struct DetailView: View {
             }
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
+
+            // Photos
+            if !contact.photoPaths.isEmpty {
+                Section {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(contact.photoPaths, id: \.self) { path in
+                                if let uiImage = UIImage(contentsOfFile: path) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 80, height: 80)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        .onTapGesture { selectedPhotoPath = path }
+                                        .accessibilityIdentifier("detail_photo_thumbnail")
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+            }
 
             // Phones
             if !contact.phones.isEmpty {
@@ -107,6 +133,29 @@ struct DetailView: View {
             }
         }
         .navigationTitle(contact.fullName.isEmpty ? "Kişi Detayı" : contact.fullName)
+        .fullScreenCover(isPresented: Binding(
+            get: { selectedPhotoPath != nil },
+            set: { if !$0 { selectedPhotoPath = nil } }
+        )) {
+            if let path = selectedPhotoPath,
+               let uiImage = UIImage(contentsOfFile: path) {
+                ZStack(alignment: .topTrailing) {
+                    Color.black.ignoresSafeArea()
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                    Button {
+                        selectedPhotoPath = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title)
+                            .foregroundStyle(.white)
+                            .padding()
+                    }
+                    .accessibilityIdentifier("detail_photo_dismiss")
+                }
+            }
+        }
     }
 
     // MARK: - Header
