@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 /// Kişi listesi arama + debounce ViewModel.
 /// `contactStore` DI hazır olduğunda `update` → `contactStore.search` ile değiştirilebilir.
@@ -7,6 +8,22 @@ final class ContactsViewModel: ObservableObject {
     @Published private(set) var displayedContacts: [Contact] = []
 
     private var debounceTask: Task<Void, Never>?
+
+    // MARK: - delete
+
+    @Published var deleteError: String?
+
+    func delete(_ contact: Contact, in modelContext: ModelContext) {
+        do {
+            modelContext.delete(contact)
+            try modelContext.save()
+            // TODO: Bug #133 — PhotoStorage.deletePhotos(contact.photoPaths)
+            // TODO: Bug #133 — PhotoStorage.deleteICS(for: contact.id)
+            // TODO: Bug #133 — DeviceContactsService.delete(contact.deviceContactId)
+        } catch {
+            deleteError = "Kişi silinemedi."
+        }
+    }
 
     func update(query: String, contacts: [Contact]) {
         debounceTask?.cancel()

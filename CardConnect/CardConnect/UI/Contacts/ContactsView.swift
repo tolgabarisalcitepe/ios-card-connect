@@ -7,6 +7,8 @@ struct ContactsView: View {
 
     @StateObject private var viewModel = ContactsViewModel()
     @State private var searchText = ""
+    @Environment(\.modelContext) private var modelContext
+    @State private var contactToDelete: Contact?
 
     var body: some View {
         Group {
@@ -30,6 +32,32 @@ struct ContactsView: View {
         .onAppear {
             viewModel.update(query: searchText, contacts: contacts)
         }
+        .confirmationDialog(
+            "Bu kişiyi silmek istediğinden emin misin?",
+            isPresented: Binding(
+                get: { contactToDelete != nil },
+                set: { if !$0 { contactToDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let contact = contactToDelete {
+                Button("Sil", role: .destructive) {
+                    viewModel.delete(contact, in: modelContext)
+                    contactToDelete = nil
+                }
+            }
+            Button("İptal", role: .cancel) {
+                contactToDelete = nil
+            }
+        }
+        .alert("Hata", isPresented: Binding(
+            get: { viewModel.deleteError != nil },
+            set: { if !$0 { viewModel.deleteError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) { viewModel.deleteError = nil }
+        } message: {
+            Text(viewModel.deleteError ?? "")
+        }
         .accessibilityIdentifier("contacts_view")
     }
 
@@ -41,6 +69,14 @@ struct ContactsView: View {
                 ContactRowView(contact: contact)
             }
             .accessibilityIdentifier("contact_row_\(contact.id)")
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button(role: .destructive) {
+                    contactToDelete = contact
+                } label: {
+                    Label("Sil", systemImage: "trash")
+                }
+                .accessibilityIdentifier("contact_delete_swipe")
+            }
         }
         .listStyle(.plain)
     }
