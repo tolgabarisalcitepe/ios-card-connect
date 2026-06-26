@@ -13,4 +13,5 @@ enum AppRoute: Hashable {
     case detail(contactID: UUID)
     case edit(contactID: UUID)
     case mailCompose(contactID: UUID)
+    case templateEdit(templateID: UUID)
 }
