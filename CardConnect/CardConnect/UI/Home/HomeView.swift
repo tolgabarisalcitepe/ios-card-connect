@@ -13,6 +13,11 @@ struct HomeView: View {
         .navigationTitle("Kişiler")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                NavigationLink(value: AppRoute.profile) {
+                    Image(systemName: "person.circle")
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 NavigationLink(value: AppRoute.camera) {
                     Image(systemName: "plus")
