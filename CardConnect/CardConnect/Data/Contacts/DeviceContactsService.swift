@@ -43,11 +43,68 @@ actor DeviceContactsService {
         return cn.identifier
     }
 
-    // MARK: - Update (stub — #104)
+    // MARK: - Update
 
-    /// TODO: #104 — mevcut CNContact'ı sil + yeniden ekle (CNContactStore güvenilir güncelleme yok).
+    /// Mevcut CNContact'ı fetch eder, tüm alanları günceller ve CNSaveRequest.update çalıştırır.
     func update(_ contact: Contact) throws {
-        // Implemented in #104
+        guard let deviceContactId = contact.deviceContactId, !deviceContactId.isEmpty else { return }
+        try requireAuthorization()
+
+        let keys: [CNKeyDescriptor] = [
+            CNContactGivenNameKey as CNKeyDescriptor,
+            CNContactFamilyNameKey as CNKeyDescriptor,
+            CNContactOrganizationNameKey as CNKeyDescriptor,
+            CNContactJobTitleKey as CNKeyDescriptor,
+            CNContactPhoneNumbersKey as CNKeyDescriptor,
+            CNContactEmailAddressesKey as CNKeyDescriptor,
+            CNContactPostalAddressesKey as CNKeyDescriptor,
+            CNContactUrlAddressesKey as CNKeyDescriptor,
+            CNContactNoteKey as CNKeyDescriptor,
+        ]
+
+        let existing: CNContact
+        do {
+            existing = try store.unifiedContact(withIdentifier: deviceContactId, keysToFetch: keys)
+        } catch {
+            throw DeviceContactsError.saveFailed(error)
+        }
+
+        guard let mutable = existing.mutableCopy() as? CNMutableContact else { return }
+
+        mutable.givenName        = contact.firstName
+        mutable.familyName       = contact.lastName
+        mutable.organizationName = contact.company
+        mutable.jobTitle         = contact.title
+
+        mutable.phoneNumbers = contact.phones.map {
+            CNLabeledValue(label: CNLabelPhoneNumberMain, value: CNPhoneNumber(stringValue: $0))
+        }
+        mutable.emailAddresses = contact.emails.map {
+            CNLabeledValue(label: CNLabelWork, value: $0 as NSString)
+        }
+
+        if !contact.address.isEmpty {
+            let postal = CNMutablePostalAddress()
+            postal.street = contact.address
+            mutable.postalAddresses = [CNLabeledValue(label: CNLabelWork, value: postal)]
+        } else {
+            mutable.postalAddresses = []
+        }
+
+        mutable.urlAddresses = contact.linkedin.isEmpty
+            ? []
+            : [CNLabeledValue(label: "LinkedIn", value: contact.linkedin as NSString)]
+
+        // Bug #136: note alanı her zaman explicit set edilmeli.
+        mutable.note = contact.notes
+
+        let request = CNSaveRequest()
+        request.update(mutable)
+        do {
+            try store.execute(request)
+        } catch {
+            throw DeviceContactsError.saveFailed(error)
+        }
     }
 
     // MARK: - Delete (stub — #105)
