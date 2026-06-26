@@ -5,7 +5,11 @@ struct DetailView: View {
     let contactID: UUID
 
     @Query private var contacts: [Contact]
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedPhotoPath: String?
+    @State private var showDeleteConfirm = false
+    @State private var deleteError: String?
 
     init(contactID: UUID) {
         self.contactID = contactID
@@ -134,7 +138,13 @@ struct DetailView: View {
         }
         .navigationTitle(contact.fullName.isEmpty ? "Kişi Detayı" : contact.fullName)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .topBarLeading) {
+                NavigationLink(value: AppRoute.edit(contactID: contact.id)) {
+                    Text("Düzenle")
+                }
+                .accessibilityIdentifier("detail_edit_button")
+            }
+            ToolbarItemGroup(placement: .topBarTrailing) {
                 if let url = try? VCardExporter.writeToTempFile(contact: contact) {
                     ShareLink(
                         item: url,
@@ -147,7 +157,29 @@ struct DetailView: View {
                     }
                     .accessibilityIdentifier("detail_share_button")
                 }
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .accessibilityIdentifier("detail_delete_button")
             }
+        }
+        .confirmationDialog(
+            "Bu kişiyi silmek istediğinden emin misin?",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Sil", role: .destructive) { performDelete(contact) }
+            Button("İptal", role: .cancel) {}
+        }
+        .alert("Hata", isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) { deleteError = nil }
+        } message: {
+            Text(deleteError ?? "")
         }
         .fullScreenCover(isPresented: Binding(
             get: { selectedPhotoPath != nil },
@@ -171,6 +203,21 @@ struct DetailView: View {
                     .accessibilityIdentifier("detail_photo_dismiss")
                 }
             }
+        }
+    }
+
+    // MARK: - Delete
+
+    private func performDelete(_ contact: Contact) {
+        do {
+            modelContext.delete(contact)
+            try modelContext.save()
+            // TODO: Bug #133 — PhotoStorage.deletePhotos(contact.photoPaths)
+            // TODO: Bug #133 — PhotoStorage.deleteICS(for: contact.id)
+            // TODO: Bug #133 — DeviceContactsService.delete(contact.deviceContactID)
+            dismiss()
+        } catch {
+            deleteError = "Kişi silinemedi."
         }
     }
 

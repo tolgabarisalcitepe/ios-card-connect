@@ -47,6 +47,9 @@ struct RootNavigationView: View {
             Text("EventMatchView — Epic 4: \(id)")
         case .detail(let id):
             DetailView(contactID: id)
+        case .edit(let id):
+            Text("ContactEditView — Epic 2 #100: \(id)")
+                .foregroundStyle(.secondary)
         case .mailCompose(let id):
             Text("MailComposeView — Epic 5 #id: \(id)")
         }
