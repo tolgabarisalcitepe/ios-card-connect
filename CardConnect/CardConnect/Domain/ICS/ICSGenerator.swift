@@ -41,9 +41,14 @@ enum ICSGenerator {
         if let description = event.description {
             lines.append("DESCRIPTION:\(escapeText(description))")
         }
+        if isValidEmail(event.organizerEmail) {
+            lines.append("ORGANIZER;CN=\"\(escapeText(event.organizerName))\":"
+                + "mailto:\(event.organizerEmail)")
+        }
+        if isValidEmail(event.attendeeEmail) {
+            lines.append("ATTENDEE;RSVP=TRUE:mailto:\(event.attendeeEmail)")
+        }
         lines.append(contentsOf: [
-            "ORGANIZER;CN=\"\(event.organizerName)\":mailto:\(event.organizerEmail)",
-            "ATTENDEE;RSVP=TRUE:mailto:\(event.attendeeEmail)",
             "END:VEVENT",
             "END:VCALENDAR",
         ])
