@@ -78,7 +78,7 @@ struct RootNavigationView: View {
         case .edit(let id):
             ContactEditView(contactID: id)
         case .mailCompose(let id):
-            Text("MailComposeView — Epic 5 #id: \(id)")
+            MailComposeView(contactID: id)
         case .templateEdit(let id):
             TemplateEditView(templateID: id)
         }
