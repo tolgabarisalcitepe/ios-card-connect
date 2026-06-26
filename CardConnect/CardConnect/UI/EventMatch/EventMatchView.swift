@@ -41,7 +41,10 @@ struct EventMatchView: View {
         .accessibilityIdentifier("event_match_view")
         .safeAreaInset(edge: .bottom) { skipButton }
         .task {
-            await viewModel.loadEvents(calendarService: dependencies.calendarService)
+            await viewModel.loadEvents(
+                calendarService: dependencies.calendarService,
+                onPermissionDenied: onSkip
+            )
         }
     }
 

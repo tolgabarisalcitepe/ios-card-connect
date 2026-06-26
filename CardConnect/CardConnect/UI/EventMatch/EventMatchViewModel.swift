@@ -15,14 +15,48 @@ final class EventMatchViewModel: ObservableObject {
     @Published var state: EventMatchState = .loading
     @Published var canLoadMore = false
     @Published var isLoadingMore = false
+    @Published var errorMessage: String?
 
-    // TODO: Epic 4 #113 — takvim izni + loadEvents
-    func loadEvents(calendarService: CalendarService) async {
-        state = .empty
+    private var pageLimit = 20
+
+    // MARK: - loadEvents
+
+    func loadEvents(calendarService: CalendarService, onPermissionDenied: @escaping () -> Void) async {
+        if await !calendarService.isAuthorized {
+            let granted = await calendarService.requestAccess()
+            if !granted {
+                state = .empty
+                errorMessage = "Takvim erişimi reddedildi."
+                onPermissionDenied()
+                return
+            }
+        }
+
+        let today = await calendarService.getEventsForDay(Date())
+        if !today.isEmpty {
+            state = .active(today)
+            return
+        }
+
+        let past = await calendarService.getEventsBefore(limit: pageLimit)
+        if past.isEmpty {
+            state = .empty
+        } else {
+            canLoadMore = past.count == pageLimit
+            state = .list(past)
+        }
     }
 
-    // TODO: Epic 4 #112 — geçmiş etkinlikleri 20'şer yükle
+    // MARK: - loadMore
+
     func loadMore(calendarService: CalendarService) async {
+        guard canLoadMore, !isLoadingMore else { return }
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+        pageLimit += 20
+        let events = await calendarService.getEventsBefore(limit: pageLimit)
+        canLoadMore = events.count == pageLimit
+        state = .list(events)
     }
 
     // TODO: Epic 4 #114 — Contact.eventId/eventName güncelle + notes append
