@@ -25,6 +25,7 @@ struct MailComposeView: View {
         return cal.date(bySettingHour: 10, minute: 0, second: 0, of: tomorrow) ?? tomorrow
     }()
     @State private var calendarPermissionDenied = false
+    @StateObject private var viewModel = MailComposeViewModel()
 
     private var contact: Contact? {
         allContacts.first { $0.id == contactID }
@@ -163,10 +164,59 @@ struct MailComposeView: View {
                     displayedComponents: [.date, .hourAndMinute]
                 )
                 .datePickerStyle(.compact)
+                .onChange(of: meetingDate) { _, newDate in
+                    Task {
+                        await viewModel.loadEventsForDay(
+                            newDate,
+                            calendarService: dependencies.calendarService
+                        )
+                    }
+                }
+
+                // Yükleme göstergesi
+                if viewModel.isLoadingEvents {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("Takvim kontrol ediliyor…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // Çakışma kartı
+                let conflicts = viewModel.conflictingEvents(for: meetingDate)
+                if !conflicts.isEmpty {
+                    conflictCard(events: conflicts)
+                }
             }
         }
         .padding()
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func conflictCard(events: [CalendarEvent]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Çakışan Etkinlikler", systemImage: "exclamationmark.circle.fill")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.red)
+
+            ForEach(events) { event in
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(.red)
+                        .frame(width: 6, height: 6)
+                    Text(event.title)
+                        .font(.footnote)
+                    Spacer()
+                    Text(event.startDate, style: .time)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.red.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
     }
 
     private func requestCalendarAccess() async {
@@ -174,6 +224,8 @@ struct MailComposeView: View {
         if !granted {
             includeInvite = false
             calendarPermissionDenied = true
+        } else {
+            await viewModel.loadEventsForDay(meetingDate, calendarService: dependencies.calendarService)
         }
     }
 
