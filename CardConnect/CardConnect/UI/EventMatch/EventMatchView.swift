@@ -10,6 +10,7 @@ struct EventMatchView: View {
 
     @StateObject private var viewModel = EventMatchViewModel()
     @Environment(\.dependencies) private var dependencies
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         Group {
@@ -56,7 +57,12 @@ struct EventMatchView: View {
                 ForEach(events) { event in
                     EventCardView(event: event) {
                         Task {
-                            let ok = await viewModel.selectEvent(event, for: contactID)
+                            let ok = await viewModel.selectEvent(
+                                event,
+                                for: contactID,
+                                modelContext: modelContext,
+                                permissionCoordinator: dependencies.permissionCoordinator
+                            )
                             if ok { onMatched() }
                         }
                     }

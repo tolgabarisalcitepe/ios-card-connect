@@ -2,6 +2,7 @@
 // CardConnect
 
 import Foundation
+import SwiftData
 
 enum EventMatchState {
     case loading
@@ -59,8 +60,45 @@ final class EventMatchViewModel: ObservableObject {
         state = .list(events)
     }
 
-    // TODO: Epic 4 #114 — Contact.eventId/eventName güncelle + notes append
-    func selectEvent(_ event: CalendarEvent, for contactID: UUID) async -> Bool {
-        return false
+    // MARK: - selectEvent
+
+    func selectEvent(
+        _ event: CalendarEvent,
+        for contactID: UUID,
+        modelContext: ModelContext,
+        permissionCoordinator: PermissionCoordinator
+    ) async -> Bool {
+        let descriptor = FetchDescriptor<Contact>(predicate: #Predicate { $0.id == contactID })
+        guard let contact = (try? modelContext.fetch(descriptor))?.first else { return false }
+
+        contact.eventId = event.id
+        contact.eventName = event.title
+        contact.updatedAt = Date()
+
+        // Bug #134: notes üzerine yazma yok — append only
+        let eventLine = "[\(event.title)]"
+        if !contact.notes.contains(eventLine) {
+            let separator = contact.notes.isEmpty ? "" : "\n"
+            contact.notes += separator + eventLine
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            errorMessage = "Kayıt güncellenemedi."
+            return false
+        }
+
+        // Opsiyonel: henüz rehbere eklenmemişse ve izin varsa ekle
+        if contact.deviceContactId == nil,
+           await permissionCoordinator.contactsStatus() == .authorized {
+            let service = DeviceContactsService()
+            if let deviceId = try? service.add(contact) {
+                contact.deviceContactId = deviceId
+                try? modelContext.save()
+            }
+        }
+
+        return true
     }
 }
