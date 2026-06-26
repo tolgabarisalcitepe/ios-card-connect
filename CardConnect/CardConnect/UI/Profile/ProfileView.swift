@@ -13,6 +13,7 @@ struct ProfileView: View {
     @State private var avatarImage: Image?
     @State private var showQR = false
     @State private var showSelfScan = false
+    @State private var showPrivacyPolicy = false
 
     private var isProfileEmpty: Bool {
         viewModel.profile.firstName.isEmpty && viewModel.profile.lastName.isEmpty
@@ -27,6 +28,7 @@ struct ProfileView: View {
             basicInfoSection
             contactSection
             socialSection
+            privacySection
         }
         .navigationTitle("Profil")
         .navigationBarTitleDisplayMode(.large)
@@ -48,6 +50,9 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showQR) {
             QRCodeView(profile: viewModel.profile)
+        }
+        .sheet(isPresented: $showPrivacyPolicy) {
+            PrivacyPolicyView()
         }
         .sheet(isPresented: $showSelfScan) {
             ProfileSetupView { parsed in
@@ -153,6 +158,14 @@ struct ProfileView: View {
             TextField("Web Sitesi", text: $viewModel.profile.website)
                 .keyboardType(.URL)
                 .textInputAutocapitalization(.never)
+        }
+    }
+
+    private var privacySection: some View {
+        Section("Hakkında") {
+            Button("Gizlilik Politikası") {
+                showPrivacyPolicy = true
+            }
         }
     }
 

@@ -9,6 +9,7 @@ struct OnboardingView: View {
 
     @State private var step = 0
     @AppStorage("privacy_accepted") private var privacyAccepted = false
+    @AppStorage("privacy_accepted_date") private var privacyAcceptedDate = ""
     @Environment(\.dependencies) private var dependencies
 
     var body: some View {
@@ -18,6 +19,11 @@ struct OnboardingView: View {
             navigationBar
         }
         .animation(.easeInOut, value: step)
+        .onChange(of: privacyAccepted) { _, accepted in
+            if accepted && privacyAcceptedDate.isEmpty {
+                privacyAcceptedDate = ISO8601DateFormatter().string(from: Date())
+            }
+        }
     }
 
     // MARK: - Step Content
@@ -148,6 +154,7 @@ private struct FeaturesPage: View {
 
 private struct PrivacyPage: View {
     @Binding var accepted: Bool
+    @State private var showPolicy = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -163,6 +170,8 @@ private struct PrivacyPage: View {
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             }
+            Button("Gizlilik Politikasını Oku") { showPolicy = true }
+                .font(.subheadline)
             Toggle(isOn: $accepted) {
                 Text("Gizlilik politikasını okudum ve kabul ediyorum.")
                     .font(.subheadline)
@@ -173,6 +182,9 @@ private struct PrivacyPage: View {
             Spacer()
         }
         .padding(.horizontal, 32)
+        .sheet(isPresented: $showPolicy) {
+            PrivacyPolicyView()
+        }
     }
 }
 
