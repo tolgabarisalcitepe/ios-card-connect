@@ -7,16 +7,18 @@ import SwiftData
 struct RootNavigationView: View {
     @AppStorage("onboarding_done") private var onboardingDone = false
     @State private var path = NavigationPath()
+    @State private var showJailbreakAlert = false
     @Environment(\.dependencies) private var dependencies
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
-        if onboardingDone {
-            NavigationStack(path: $path) {
-                HomeView()
-                    .navigationDestination(for: AppRoute.self) { destination(for: $0) }
-            }
-            .task {
+        Group {
+            if onboardingDone {
+                NavigationStack(path: $path) {
+                    HomeView()
+                        .navigationDestination(for: AppRoute.self) { destination(for: $0) }
+                }
+                .task {
                 if ProcessInfo.processInfo.arguments.contains("-UITestMockOCR") {
                     var card = ParsedCard()
                     card.firstName = "Test"
@@ -47,10 +49,20 @@ struct RootNavigationView: View {
                     path.append(AppRoute.mailCompose(contactID: contact.id))
                 }
             }
-        } else {
-            OnboardingView {
-                onboardingDone = true
+            .onAppear {
+                showJailbreakAlert = JailbreakDetector.isJailbroken
             }
+            } else {
+                OnboardingView {
+                    onboardingDone = true
+                }
+            }
+        }
+        .alert("Güvenlik Uyarısı", isPresented: $showJailbreakAlert) {
+            Button("Devam Et", role: .cancel) { showJailbreakAlert = false }
+            Button("Çıkış", role: .destructive) { exit(0) }
+        } message: {
+            Text("Bu cihazda jailbreak tespit edildi. Verileriniz risk altında olabilir.")
         }
     }
 
