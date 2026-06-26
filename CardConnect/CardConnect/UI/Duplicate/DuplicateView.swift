@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// Duplikat diff görünümü — yalnızca değişen/dolu gelen alanları gösterir.
-/// Merge / yeni kayıt aksiyonları #109'da eklenir.
+/// Duplikat diff görünümü + merge / yeni kayıt aksiyonları.
 struct DuplicateView: View {
     let existing: Contact
     let incoming: Contact
+    @EnvironmentObject var dependencies: DependencyContainer
+    @StateObject private var viewModel = DuplicateViewModel()
+    @Binding var navigationPath: [AppRoute]
 
     var body: some View {
         List {
@@ -25,10 +27,59 @@ struct DuplicateView: View {
                     }
                 }
             }
+
+            if let error = viewModel.errorMessage {
+                Section {
+                    Text(error)
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                }
+            }
         }
         .navigationTitle("Olası Duplikat")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("duplicate_view")
+        .safeAreaInset(edge: .bottom) {
+            actionButtons
+        }
+    }
+
+    // MARK: - Action buttons
+
+    private var actionButtons: some View {
+        VStack(spacing: 12) {
+            Button {
+                Task {
+                    let ok = await viewModel.mergeAndContinue(
+                        existing: existing,
+                        incoming: incoming,
+                        scanFlow: dependencies.scanFlow
+                    )
+                    if ok { navigationPath = [] }
+                }
+            } label: {
+                Label("Mevcut Kaydı Güncelle", systemImage: "arrow.triangle.merge")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(viewModel.isLoading)
+            .accessibilityIdentifier("duplicate_merge_button")
+
+            Button {
+                Task {
+                    let ok = await viewModel.continueAsNew(scanFlow: dependencies.scanFlow)
+                    if ok { navigationPath = [] }
+                }
+            } label: {
+                Label("Yeni Kayıt Oluştur", systemImage: "person.badge.plus")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .disabled(viewModel.isLoading)
+            .accessibilityIdentifier("duplicate_new_button")
+        }
+        .padding()
+        .background(.regularMaterial)
     }
 
     // MARK: - Header

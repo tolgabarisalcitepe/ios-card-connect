@@ -38,8 +38,11 @@ struct RootNavigationView: View {
             CameraView(path: $path)
         case .confirm:
             ConfirmView(path: $path)
-        case .duplicate(let id):
-            Text("DuplicateView — Epic 3: \(id)")
+        case .duplicate(_):
+            // Note: existing/incoming Contact objects fetched by DuplicateViewModel in Epic 2
+            // Placeholder until ContactStore is available
+            Text("Duplikat görünümü Epic 2 sonrası aktif olacak")
+                .foregroundStyle(.secondary)
         case .eventMatch(let id):
             Text("EventMatchView — Epic 4: \(id)")
         }
