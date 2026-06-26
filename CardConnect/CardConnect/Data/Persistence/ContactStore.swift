@@ -53,11 +53,21 @@ actor ContactStore: ContactStoreProtocol {
         return try modelContext.fetch(descriptor).first
     }
 
-    // MARK: - search (stub — #91)
+    // MARK: - search
 
+    /// Boş query tüm kişileri döner.
+    /// Filtre alanları: firstName, lastName, company, title, eventName.
     func search(query: String) throws -> [Contact] {
-        // TODO: #91 — Swift-side fulltext filter
-        return []
+        let all = try fetchAll()
+        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !q.isEmpty else { return all }
+        return all.filter { c in
+            c.firstName.lowercased().contains(q) ||
+            c.lastName.lowercased().contains(q)  ||
+            c.company.lowercased().contains(q)   ||
+            c.title.lowercased().contains(q)     ||
+            (c.eventName?.lowercased().contains(q) ?? false)
+        }
     }
 
     // MARK: - findDuplicate
