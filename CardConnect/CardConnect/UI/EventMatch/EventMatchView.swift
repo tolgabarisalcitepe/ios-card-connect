@@ -22,7 +22,11 @@ struct EventMatchView: View {
                 eventList(events: events, header: "Bugünkü Etkinlikler")
 
             case .list(let events):
-                eventList(events: events, header: "Son Etkinlikler")
+                eventList(
+                    events: Array(events.reversed()),
+                    header: "Son Etkinlikler",
+                    showLoadMore: viewModel.canLoadMore
+                )
 
             case .empty:
                 ContentUnavailableView(
@@ -43,7 +47,7 @@ struct EventMatchView: View {
 
     // MARK: - Event list
 
-    private func eventList(events: [CalendarEvent], header: String) -> some View {
+    private func eventList(events: [CalendarEvent], header: String, showLoadMore: Bool = false) -> some View {
         List {
             Section(header: Text(header)) {
                 ForEach(events) { event in
@@ -54,6 +58,29 @@ struct EventMatchView: View {
                         }
                     }
                 }
+                if showLoadMore {
+                    loadMoreRow
+                }
+            }
+        }
+    }
+
+    // MARK: - Load more
+
+    private var loadMoreRow: some View {
+        Group {
+            if viewModel.isLoadingMore {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            } else {
+                Button("Daha fazla") {
+                    Task {
+                        await viewModel.loadMore(calendarService: dependencies.calendarService)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("event_load_more_button")
             }
         }
     }

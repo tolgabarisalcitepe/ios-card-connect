@@ -13,10 +13,16 @@ enum EventMatchState {
 @MainActor
 final class EventMatchViewModel: ObservableObject {
     @Published var state: EventMatchState = .loading
+    @Published var canLoadMore = false
+    @Published var isLoadingMore = false
 
     // TODO: Epic 4 #113 — takvim izni + loadEvents
     func loadEvents(calendarService: CalendarService) async {
         state = .empty
+    }
+
+    // TODO: Epic 4 #112 — geçmiş etkinlikleri 20'şer yükle
+    func loadMore(calendarService: CalendarService) async {
     }
 
     // TODO: Epic 4 #114 — Contact.eventId/eventName güncelle + notes append
