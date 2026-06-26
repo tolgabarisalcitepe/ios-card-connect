@@ -60,7 +60,14 @@ struct RootNavigationView: View {
                 }
             )
         case .eventMatch(let id):
-            Text("EventMatchView — Epic 4: \(id)")
+            EventMatchView(
+                contactID: id,
+                onSkip: { path = NavigationPath() },
+                onMatched: {
+                    path.removeLast()
+                    path.append(AppRoute.detail(contactID: id))
+                }
+            )
         case .detail(let id):
             DetailView(contactID: id)
         case .edit(let id):
