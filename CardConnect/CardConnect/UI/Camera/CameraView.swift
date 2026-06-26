@@ -170,10 +170,12 @@ struct CameraView: View {
                 dependencies.permissionCoordinator.openSettings()
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("camera_settings_button")
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
+        .accessibilityIdentifier("camera_permission_denied_view")
     }
 
     // MARK: - Actions

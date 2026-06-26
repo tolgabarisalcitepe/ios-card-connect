@@ -27,6 +27,10 @@ final class CameraViewModel {
     // MARK: - Lifecycle
 
     func startSession() async {
+        if ProcessInfo.processInfo.arguments.contains("-UITestMockCameraPermissionDenied") {
+            cameraPermissionDenied = true
+            return
+        }
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         switch status {
         case .authorized:
