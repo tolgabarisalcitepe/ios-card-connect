@@ -80,7 +80,7 @@ struct RootNavigationView: View {
         case .mailCompose(let id):
             Text("MailComposeView — Epic 5 #id: \(id)")
         case .templateEdit(let id):
-            Text("TemplateEditView — #119 templateID: \(id)")
+            TemplateEditView(templateID: id)
         }
     }
 }
