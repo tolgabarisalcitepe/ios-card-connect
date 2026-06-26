@@ -54,15 +54,18 @@ final class Contact {
         self.id = id
         self.source = source.rawValue
         self.status = status.rawValue
-        self.firstName = firstName
-        self.lastName = lastName
-        self.company = company
-        self.title = title
-        self.phones = phones
-        self.emails = emails
-        self.address = address
-        self.notes = notes
-        self.linkedin = linkedin
+        // Android Cat-6: overlength veri DB'ye ulaşamaz — her alan init'te truncate.
+        self.firstName = String(firstName.prefix(FieldLimits.maxName))
+        self.lastName  = String(lastName.prefix(FieldLimits.maxName))
+        self.company   = String(company.prefix(FieldLimits.maxCompany))
+        self.title     = String(title.prefix(FieldLimits.maxTitle))
+        self.phones    = Array(phones
+            .map { String($0.prefix(FieldLimits.maxPhone)) }
+            .prefix(FieldLimits.maxPhones))
+        self.emails    = emails.map { String($0.prefix(FieldLimits.maxEmail)) }
+        self.address   = String(address.prefix(FieldLimits.maxAddress))
+        self.notes     = String(notes.prefix(FieldLimits.maxNotes))
+        self.linkedin  = String(linkedin.prefix(FieldLimits.maxURL))
         self.photoPaths = photoPaths
         self.eventId = eventId
         self.eventName = eventName
