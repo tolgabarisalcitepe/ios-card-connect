@@ -47,8 +47,7 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $showQR) {
-            Text("QR Kodu — #132")
-                .presentationDetents([.medium])
+            QRCodeView(profile: viewModel.profile)
         }
         .sheet(isPresented: $showSelfScan) {
             ProfileSetupView { parsed in

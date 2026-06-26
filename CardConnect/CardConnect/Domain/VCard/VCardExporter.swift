@@ -3,6 +3,24 @@ import Foundation
 /// RFC 6350 vCard 3.0 üreticisi.
 enum VCardExporter {
 
+    /// Kullanıcının kendi profilinden vCard üretir.
+    static func build(from profile: UserProfile) -> String {
+        var lines: [String] = [
+            "BEGIN:VCARD",
+            "VERSION:3.0",
+            "N:\(profile.lastName);\(profile.firstName);;;",
+            "FN:\(profile.fullName)",
+        ]
+        if !profile.company.isEmpty { lines.append("ORG:\(profile.company)") }
+        if !profile.title.isEmpty   { lines.append("TITLE:\(profile.title)") }
+        if !profile.phone.isEmpty   { lines.append("TEL;TYPE=VOICE:\(profile.phone)") }
+        if !profile.email.isEmpty   { lines.append("EMAIL:\(profile.email)") }
+        if !profile.linkedin.isEmpty { lines.append("URL:\(profile.linkedin)") }
+        if !profile.website.isEmpty  { lines.append("URL:\(profile.website)") }
+        lines.append("END:VCARD")
+        return lines.joined(separator: "\r\n") + "\r\n"
+    }
+
     /// RFC 6350 vCard 3.0 formatında string üretir.
     static func build(from contact: Contact) -> String {
         var lines: [String] = [
