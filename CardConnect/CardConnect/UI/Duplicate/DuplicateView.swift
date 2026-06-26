@@ -4,8 +4,9 @@ import SwiftUI
 struct DuplicateView: View {
     let existing: Contact
     let incoming: Contact
+    let onMerged: (UUID) -> Void
+    let onNew: (UUID) -> Void
     @Environment(\.dependencies) private var dependencies
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = DuplicateViewModel()
 
@@ -57,7 +58,7 @@ struct DuplicateView: View {
                         modelContext: modelContext,
                         scanFlow: dependencies.scanFlow
                     )
-                    if ok { dismiss() }
+                    if ok { onMerged(existing.id) }
                 }
             } label: {
                 Label("Mevcut Kaydı Güncelle", systemImage: "arrow.triangle.merge")
@@ -74,7 +75,7 @@ struct DuplicateView: View {
                         modelContext: modelContext,
                         scanFlow: dependencies.scanFlow
                     )
-                    if ok { dismiss() }
+                    if ok { onNew(incoming.id) }
                 }
             } label: {
                 Label("Yeni Kayıt Oluştur", systemImage: "person.badge.plus")

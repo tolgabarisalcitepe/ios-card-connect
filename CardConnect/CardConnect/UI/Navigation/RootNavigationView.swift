@@ -48,7 +48,17 @@ struct RootNavigationView: View {
         case .confirm:
             ConfirmView(path: $path)
         case .duplicate(let id):
-            DuplicateRouteView(existingContactID: id)
+            DuplicateRouteView(
+                existingContactID: id,
+                onMerged: { mergedID in
+                    path.removeLast()
+                    path.append(AppRoute.detail(contactID: mergedID))
+                },
+                onNew: { newID in
+                    path.removeLast()
+                    path.append(AppRoute.eventMatch(contactID: newID))
+                }
+            )
         case .eventMatch(let id):
             Text("EventMatchView — Epic 4: \(id)")
         case .detail(let id):
