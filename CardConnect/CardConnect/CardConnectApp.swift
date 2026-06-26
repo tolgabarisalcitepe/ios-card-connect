@@ -12,6 +12,7 @@ import SwiftData
 struct CardConnectApp: App {
 
     private let modelContainer: ModelContainer = {
+        BackupExclusion.applyAll()
         do {
             let container = try SwiftDataStack.makeContainer()
             EmailTemplateSeeder.seedIfEmpty(in: container.mainContext)
