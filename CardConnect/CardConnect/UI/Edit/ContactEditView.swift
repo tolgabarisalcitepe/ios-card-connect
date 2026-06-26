@@ -5,7 +5,9 @@ struct ContactEditView: View {
     let contactID: UUID
 
     @Query private var contacts: [Contact]
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var viewModel = ContactEditViewModel()
 
     // Editable field copies
     @State private var firstName = ""
@@ -18,9 +20,7 @@ struct ContactEditView: View {
     @State private var linkedin  = ""
     @State private var notes     = ""
 
-    @State private var hasLoaded  = false
-    @State private var isSaving   = false
-    @State private var saveError: String?
+    @State private var hasLoaded = false
 
     private var contact: Contact? { contacts.first }
     private var canSave: Bool { !firstName.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -45,10 +45,10 @@ struct ContactEditView: View {
                     .accessibilityIdentifier("edit_cancel_button")
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button(isSaving ? "Kaydediliyor…" : "Kaydet") {
+                Button(viewModel.isSaving ? "Kaydediliyor…" : "Kaydet") {
                     save()
                 }
-                .disabled(!canSave || isSaving)
+                .disabled(!canSave || viewModel.isSaving)
                 .fontWeight(.semibold)
                 .accessibilityIdentifier("edit_save_button")
             }
@@ -63,12 +63,12 @@ struct ContactEditView: View {
         .onChange(of: linkedin)  { _, v in cap(&linkedin,   FieldLimits.maxURL) }
         .onChange(of: notes)     { _, v in cap(&notes,      FieldLimits.maxNotes) }
         .alert("Kayıt Hatası", isPresented: Binding(
-            get: { saveError != nil },
-            set: { if !$0 { saveError = nil } }
+            get: { viewModel.saveError != nil },
+            set: { if !$0 { viewModel.saveError = nil } }
         )) {
             Button("Tamam", role: .cancel) {}
         } message: {
-            Text(saveError ?? "")
+            Text(viewModel.saveError ?? "")
         }
         .accessibilityIdentifier("edit_view")
     }
@@ -181,10 +181,23 @@ struct ContactEditView: View {
     // MARK: - Save
 
     private func save() {
-        isSaving = true
-        defer { isSaving = false }
-        // TODO: #101 — ContactEditViewModel persists changes via modelContext
-        dismiss()
+        guard let c = contact else { return }
+        Task {
+            let ok = await viewModel.save(
+                contact: c,
+                firstName: firstName,
+                lastName: lastName,
+                company: company,
+                title: title,
+                phones: phones,
+                emails: emails,
+                address: address,
+                linkedin: linkedin,
+                notes: notes,
+                in: modelContext
+            )
+            if ok { dismiss() }
+        }
     }
 
     // MARK: - Helpers
