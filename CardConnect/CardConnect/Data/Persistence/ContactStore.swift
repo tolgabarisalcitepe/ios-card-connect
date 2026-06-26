@@ -60,8 +60,10 @@ actor ContactStore: ContactStoreProtocol {
         return []
     }
 
-    // MARK: - findDuplicate (stub — #90)
+    // MARK: - findDuplicate
 
+    /// Swift-side eşleştirme — `#Predicate`/`LIKE` kullanılmaz.
+    /// Öncelik: (1) name+company → (2) phone → (3) email.
     func findDuplicate(
         firstName: String,
         lastName: String,
@@ -69,7 +71,42 @@ actor ContactStore: ContactStoreProtocol {
         phones: [String],
         emails: [String]
     ) throws -> Contact? {
-        // TODO: #90 — Swift-side duplicate detection
+        let all = try fetchAll()
+
+        let fn = firstName.trimmingCharacters(in: .whitespaces)
+        let ln = lastName.trimmingCharacters(in: .whitespaces)
+        let co = company.trimmingCharacters(in: .whitespaces)
+
+        // 1. name + company (case-insensitive)
+        if !fn.isEmpty {
+            if let match = all.first(where: {
+                $0.firstName.trimmingCharacters(in: .whitespaces).lowercased() == fn.lowercased() &&
+                $0.lastName.trimmingCharacters(in: .whitespaces).lowercased()  == ln.lowercased() &&
+                $0.company.trimmingCharacters(in: .whitespaces).lowercased()   == co.lowercased()
+            }) { return match }
+        }
+
+        // 2. phone — digits-only normalizasyon
+        let inPhones = phones.map { digitsOnly($0) }.filter { !$0.isEmpty }
+        if !inPhones.isEmpty,
+           let match = all.first(where: { contact in
+               let cp = contact.phones.map { digitsOnly($0) }.filter { !$0.isEmpty }
+               return inPhones.contains { cp.contains($0) }
+           }) { return match }
+
+        // 3. email — lowercase
+        let inEmails = emails.map { $0.lowercased() }.filter { !$0.isEmpty }
+        if !inEmails.isEmpty,
+           let match = all.first(where: { contact in
+               let ce = contact.emails.map { $0.lowercased() }.filter { !$0.isEmpty }
+               return inEmails.contains { ce.contains($0) }
+           }) { return match }
+
         return nil
+    }
+
+    /// Telefon numarasından rakam-dışı karakterleri kaldırır.
+    private func digitsOnly(_ s: String) -> String {
+        s.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
     }
 }
