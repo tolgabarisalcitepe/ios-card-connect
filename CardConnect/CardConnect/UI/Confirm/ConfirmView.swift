@@ -51,7 +51,11 @@ struct ConfirmView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button(isSaving ? "Kaydediliyor…" : "Kaydet") {
-                    Task { await save() }
+                    Task {
+                            // TODO: Epic 2 — pass contactStore.allContacts here
+                            // DuplicateViewModel.checkDuplicate wired after ContactStore available
+                            await save()
+                        }
                 }
                 .accessibilityIdentifier("confirm_save_button")
                 .disabled(isSaving || firstName.trimmingCharacters(in: .whitespaces).isEmpty)
