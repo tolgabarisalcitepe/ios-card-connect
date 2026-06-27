@@ -25,13 +25,11 @@ struct HomeView: View {
         .navigationTitle("Kişiler")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
+            ToolbarItemGroup(placement: .navigationBarLeading) {
                 NavigationLink(value: AppRoute.profile) {
                     Image(systemName: "person.circle")
                 }
-            }
-            #if DEBUG
-            ToolbarItem(placement: .navigationBarLeading) {
+                #if DEBUG
                 Button {
                     showClearConfirm = true
                 } label: {
@@ -39,8 +37,8 @@ struct HomeView: View {
                         .foregroundStyle(.red)
                 }
                 .accessibilityIdentifier("debug_clear_cache_button")
+                #endif
             }
-            #endif
             ToolbarItem(placement: .primaryAction) {
                 NavigationLink(value: AppRoute.camera) {
                     Image(systemName: "plus")
