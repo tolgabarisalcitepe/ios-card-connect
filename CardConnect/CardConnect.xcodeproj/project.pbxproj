@@ -30,7 +30,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		7ADA09E32FEC6FF300798F94 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		7ADA09E32FEC6FF300798F94 /* Exceptions for "CardConnect" folder in "CardConnect" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -43,7 +43,7 @@
 		7ADA09BB2FEC6FEC00798F94 /* CardConnect */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				7ADA09E32FEC6FF300798F94 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				7ADA09E32FEC6FF300798F94 /* Exceptions for "CardConnect" folder in "CardConnect" target */,
 			);
 			path = CardConnect;
 			sourceTree = "<group>";

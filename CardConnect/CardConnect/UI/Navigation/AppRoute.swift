@@ -16,4 +16,6 @@ enum AppRoute: Hashable {
     case templateEdit(templateID: UUID)
     case templates
     case profile
+    case settings
+    case privacyPolicy
 }
