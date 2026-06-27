@@ -5,11 +5,6 @@ import SwiftUI
 
 struct HomeView: View {
 
-    #if DEBUG
-    @State private var showClearConfirm = false
-    @Environment(\.dependencies) private var dependencies
-    #endif
-
     var body: some View {
         coreView
     }
@@ -18,7 +13,7 @@ struct HomeView: View {
 
     @ViewBuilder
     private var coreView: some View {
-        let base = ZStack(alignment: .bottomTrailing) {
+        ZStack(alignment: .bottomTrailing) {
             emptyState
             scanFAB
         }
@@ -29,15 +24,9 @@ struct HomeView: View {
                 NavigationLink(value: AppRoute.profile) {
                     Image(systemName: "person.circle")
                 }
-                #if DEBUG
-                Button {
-                    showClearConfirm = true
-                } label: {
-                    Image(systemName: "trash")
-                        .foregroundStyle(.red)
+                NavigationLink(value: AppRoute.settings) {
+                    Image(systemName: "gearshape")
                 }
-                .accessibilityIdentifier("debug_clear_cache_button")
-                #endif
             }
             ToolbarItem(placement: .primaryAction) {
                 NavigationLink(value: AppRoute.camera) {
@@ -45,22 +34,6 @@ struct HomeView: View {
                 }
             }
         }
-        #if DEBUG
-        base.confirmationDialog(
-            "Tüm veriyi sıfırla",
-            isPresented: $showClearConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Sıfırla", role: .destructive) {
-                Task { await clearAllData() }
-            }
-            Button("İptal", role: .cancel) {}
-        } message: {
-            Text("Tüm kişiler ve profil silinecek. Uygulama başa dönecek.")
-        }
-        #else
-        base
-        #endif
     }
 
     // MARK: - Empty State
@@ -97,14 +70,4 @@ struct HomeView: View {
         .padding(24)
     }
 
-    // MARK: - Debug
-
-    #if DEBUG
-    private func clearAllData() async {
-        try? await dependencies.userProfileStore.deleteProfile()
-        if let domain = Bundle.main.bundleIdentifier {
-            UserDefaults.standard.removePersistentDomain(forName: domain)
-        }
-    }
-    #endif
 }

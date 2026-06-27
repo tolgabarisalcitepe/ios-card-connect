@@ -5,32 +5,23 @@ import SwiftUI
 
 struct PrivacyPolicyView: View {
 
-    @Environment(\.dismiss) private var dismiss
-
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    ForEach(sections, id: \.title) { section in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(section.title)
-                                .font(.headline)
-                            Text(section.body)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                        }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                ForEach(sections, id: \.title) { section in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(section.title)
+                            .font(.headline)
+                        Text(section.body)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
                     }
                 }
-                .padding(24)
             }
-            .navigationTitle("Gizlilik Politikası")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Kapat") { dismiss() }
-                }
-            }
+            .padding(24)
         }
+        .navigationTitle("Gizlilik Politikası")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Content

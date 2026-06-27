@@ -109,6 +109,10 @@ struct RootNavigationView: View {
             TemplatesView()
         case .profile:
             ProfileView()
+        case .settings:
+            SettingsView()
+        case .privacyPolicy:
+            PrivacyPolicyView()
         }
     }
 }
