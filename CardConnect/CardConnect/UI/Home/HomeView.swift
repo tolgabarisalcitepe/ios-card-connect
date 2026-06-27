@@ -5,8 +5,14 @@ import SwiftUI
 
 struct HomeView: View {
 
+    @Environment(\.dependencies) private var dependencies
+    @State private var profile = UserProfile()
+    @State private var avatarImage: Image?
+
     var body: some View {
         coreView
+            .task { await loadProfile() }
+            .onAppear { Task { await loadProfile() } }
     }
 
     // MARK: - Core View
@@ -22,7 +28,11 @@ struct HomeView: View {
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarLeading) {
                 NavigationLink(value: AppRoute.profile) {
-                    Image(systemName: "person.circle")
+                    if profile.fullName.isEmpty {
+                        Image(systemName: "person.circle")
+                    } else {
+                        HomeProfileChipView(profile: profile, avatarImage: avatarImage)
+                    }
                 }
                 NavigationLink(value: AppRoute.settings) {
                     Image(systemName: "gearshape")
@@ -34,6 +44,17 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Profile loading
+
+    private func loadProfile() async {
+        profile = await dependencies.userProfileStore.load()
+        guard !profile.avatarPath.isEmpty else { avatarImage = nil; return }
+        let url = URL(fileURLWithPath: profile.avatarPath)
+        guard let data = try? Data(contentsOf: url),
+              let uiImage = UIImage(data: data) else { avatarImage = nil; return }
+        avatarImage = Image(uiImage: uiImage)
     }
 
     // MARK: - Empty State
