@@ -3,10 +3,12 @@
 // Android Cat-3: @SceneStorage ile form draft process death sonrası korunur.
 
 import SwiftUI
+import SwiftData
 
 struct ConfirmView: View {
     @Binding var path: NavigationPath
     @Environment(\.dependencies) private var dependencies
+    @Environment(\.modelContext) private var modelContext
 
     // MARK: - @SceneStorage (Cat-3: process death koruması)
 
@@ -39,7 +41,7 @@ struct ConfirmView: View {
             emailSection
             otherSection
         }
-        .navigationTitle("Kaydet")
+        .navigationTitle("Kişiyi Onayla")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -51,11 +53,7 @@ struct ConfirmView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button(isSaving ? "Kaydediliyor…" : "Kaydet") {
-                    Task {
-                            // TODO: Epic 2 — pass contactStore.allContacts here
-                            // DuplicateViewModel.checkDuplicate wired after ContactStore available
-                            await save()
-                        }
+                    Task { await save() }
                 }
                 .accessibilityIdentifier("confirm_save_button")
                 .disabled(isSaving || firstName.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -231,8 +229,15 @@ struct ConfirmView: View {
             photoPaths: photoPaths.map(\.path)
         )
 
-        await ConfirmViewModel.saveContact(contact, scanFlow: dependencies.scanFlow)
+        do {
+            modelContext.insert(contact)
+            try modelContext.save()
+        } catch {
+            saveError = "Kişi kaydedilemedi."
+            return
+        }
 
+        await dependencies.scanFlow.setContactID(contact.id)
         await dependencies.scanFlow.reset()
         clearDraft()
         path.removeLast(path.count)
