@@ -6,6 +6,9 @@ import PhotosUI
 
 struct ProfileView: View {
 
+    var isOnboarding: Bool = false
+    var onComplete: (() -> Void)? = nil
+
     @Environment(\.dependencies) private var dependencies
     @StateObject private var viewModel = ProfileViewModel()
 
@@ -30,22 +33,33 @@ struct ProfileView: View {
             socialSection
             privacySection
         }
-        .navigationTitle("Profil")
+        .navigationTitle(isOnboarding ? "Profilinizi Kurun" : "Profil")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            if isOnboarding {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Atla") { onComplete?() }
+                        .foregroundStyle(.secondary)
+                }
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Kaydet") {
-                    Task { await viewModel.save(to: dependencies.userProfileStore) }
+                    Task {
+                        let saved = await viewModel.save(to: dependencies.userProfileStore)
+                        if saved { onComplete?() }
+                    }
                 }
                 .disabled(viewModel.isSaving)
             }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showQR = true
-                } label: {
-                    Image(systemName: "qrcode")
+            if !isOnboarding {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showQR = true
+                    } label: {
+                        Image(systemName: "qrcode")
+                    }
+                    .disabled(isProfileEmpty)
                 }
-                .disabled(isProfileEmpty)
             }
         }
         .sheet(isPresented: $showQR) {

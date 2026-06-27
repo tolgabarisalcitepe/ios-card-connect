@@ -10,13 +10,14 @@ struct OnboardingView: View {
     @State private var step = 0
     @AppStorage("privacy_accepted") private var privacyAccepted = false
     @AppStorage("privacy_accepted_date") private var privacyAcceptedDate = ""
-    @Environment(\.dependencies) private var dependencies
 
     var body: some View {
         VStack(spacing: 0) {
             stepContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            navigationBar
+            if step < 3 {
+                navigationBar
+            }
         }
         .animation(.easeInOut, value: step)
         .onChange(of: privacyAccepted) { _, accepted in
@@ -34,7 +35,10 @@ struct OnboardingView: View {
         case 0: WelcomePage()
         case 1: FeaturesPage()
         case 2: PrivacyPage(accepted: $privacyAccepted)
-        default: ProfileSetupPage(store: dependencies.userProfileStore, onComplete: onComplete)
+        default:
+            NavigationStack {
+                ProfileView(isOnboarding: true, onComplete: onComplete)
+            }
         }
     }
 
@@ -54,7 +58,7 @@ struct OnboardingView: View {
 
     @ViewBuilder
     private var backButton: some View {
-        if step > 0 && step < 3 {
+        if step > 0 {
             Button("Geri") { step -= 1 }
                 .foregroundStyle(.secondary)
         } else {
@@ -188,88 +192,3 @@ private struct PrivacyPage: View {
     }
 }
 
-// MARK: - Step 3: Profile Setup
-
-private struct ProfileSetupPage: View {
-    let store: UserProfileStore
-    let onComplete: () -> Void
-
-    @State private var firstName = ""
-    @State private var lastName = ""
-    @State private var company = ""
-    @State private var title = ""
-    @State private var email = ""
-    @State private var phone = ""
-    @State private var isSaving = false
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                VStack(spacing: 8) {
-                    Text("Profilinizi Kurun")
-                        .font(.title.bold())
-                    Text("Takip maillerinde kullanılacak bilgilerinizi girin. Daha sonra değiştirebilirsiniz.")
-                        .font(.body)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.top, 32)
-
-                VStack(spacing: 12) {
-                    TextField("Ad", text: $firstName)
-                        .textContentType(.givenName)
-                    TextField("Soyad", text: $lastName)
-                        .textContentType(.familyName)
-                    TextField("Şirket", text: $company)
-                        .textContentType(.organizationName)
-                    TextField("Ünvan", text: $title)
-                        .textContentType(.jobTitle)
-                    TextField("E-posta", text: $email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                    TextField("Telefon", text: $phone)
-                        .textContentType(.telephoneNumber)
-                        .keyboardType(.phonePad)
-                }
-                .textFieldStyle(.roundedBorder)
-
-                VStack(spacing: 12) {
-                    Button {
-                        save()
-                    } label: {
-                        Text(isSaving ? "Kaydediliyor…" : "Tamamla")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(isSaving)
-                    .accessibilityIdentifier("onboarding_complete_button")
-
-                    Button("Şimdi Değil") {
-                        onComplete()
-                    }
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("onboarding_skip_button")
-                }
-            }
-            .padding(.horizontal, 24)
-        }
-    }
-
-    private func save() {
-        var profile = UserProfile()
-        profile.firstName = firstName
-        profile.lastName = lastName
-        profile.company = company
-        profile.title = title
-        profile.email = email
-        profile.phone = phone
-        isSaving = true
-        Task {
-            try? await store.save(profile)
-            isSaving = false
-            onComplete()
-        }
-    }
-}

@@ -16,13 +16,17 @@ import Foundation
         profile = await store.load()
     }
 
-    func save(to store: UserProfileStore) async {
+    /// Kaydeder; başarıysa `true`, hata varsa `false` döner.
+    @discardableResult
+    func save(to store: UserProfileStore) async -> Bool {
         isSaving = true
         defer { isSaving = false }
         do {
             try await store.save(profile)
+            return true
         } catch {
             errorMessage = "Profil kaydedilemedi."
+            return false
         }
     }
 }
