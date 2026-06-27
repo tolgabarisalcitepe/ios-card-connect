@@ -2,13 +2,11 @@
 // CardConnect
 
 import SwiftUI
-import SwiftData
 
 struct HomeView: View {
 
     #if DEBUG
     @State private var showClearConfirm = false
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.dependencies) private var dependencies
     #endif
 
@@ -105,11 +103,6 @@ struct HomeView: View {
 
     #if DEBUG
     private func clearAllData() async {
-        let contacts = (try? modelContext.fetch(FetchDescriptor<Contact>())) ?? []
-        let photoPaths = contacts.flatMap(\.photoPaths)
-        contacts.forEach { modelContext.delete($0) }
-        try? modelContext.save()
-        PhotoStorage.deletePhotos(paths: photoPaths)
         try? await dependencies.userProfileStore.deleteProfile()
         if let domain = Bundle.main.bundleIdentifier {
             UserDefaults.standard.removePersistentDomain(forName: domain)
