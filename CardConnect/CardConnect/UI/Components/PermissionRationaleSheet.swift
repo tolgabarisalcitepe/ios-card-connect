@@ -42,7 +42,7 @@ struct PermissionRationaleSheet: View {
         VStack(spacing: 24) {
             Image(systemName: permissionType.icon)
                 .font(.system(size: 56))
-                .foregroundStyle(.accent)
+                .foregroundStyle(Color.accentColor)
 
             VStack(spacing: 8) {
                 Text(permissionType.title)

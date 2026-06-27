@@ -100,7 +100,7 @@ struct ProfileView: View {
                             Image(systemName: "pencil.circle.fill")
                                 .font(.title3)
                                 .symbolRenderingMode(.palette)
-                                .foregroundStyle(.white, .accentColor)
+                                .foregroundStyle(.white, Color.accentColor)
                                 .offset(x: 4, y: 4)
                         }
                 }

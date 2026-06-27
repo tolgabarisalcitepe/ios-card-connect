@@ -1,6 +1,7 @@
 // MailComposeViewModel.swift
 // CardConnect
 
+import Combine
 import Foundation
 import MessageUI
 import UIKit

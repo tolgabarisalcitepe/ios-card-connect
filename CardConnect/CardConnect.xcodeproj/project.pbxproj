@@ -29,9 +29,22 @@
 		7ADA09D02FEC6FF300798F94 /* CardConnectUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CardConnectUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		7ADA09E32FEC6FF300798F94 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 7ADA09B82FEC6FEC00798F94 /* CardConnect */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7ADA09BB2FEC6FEC00798F94 /* CardConnect */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7ADA09E32FEC6FF300798F94 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
 			path = CardConnect;
 			sourceTree = "<group>";
 		};

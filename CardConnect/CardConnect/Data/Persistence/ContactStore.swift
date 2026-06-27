@@ -41,9 +41,9 @@ actor ContactStore: ContactStoreProtocol {
         PhotoStorage.deletePhotos(paths: photoPaths)
         PhotoStorage.deleteICS(contactID: contactID)
 
-        // CNContact cleanup (best-effort)
+        // CNContact cleanup (best-effort, fire-and-forget)
         if let dcId = deviceContactId, !dcId.isEmpty {
-            try? DeviceContactsService().delete(deviceContactId: dcId)
+            Task { try? await DeviceContactsService().delete(deviceContactId: dcId) }
         }
     }
 

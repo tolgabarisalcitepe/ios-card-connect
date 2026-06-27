@@ -1,6 +1,7 @@
 // EventMatchViewModel.swift
 // CardConnect
 
+import Combine
 import Foundation
 import SwiftData
 
@@ -93,7 +94,7 @@ final class EventMatchViewModel: ObservableObject {
         if contact.deviceContactId == nil,
            await permissionCoordinator.contactsStatus() == .authorized {
             let service = DeviceContactsService()
-            if let deviceId = try? service.add(contact) {
+            if let deviceId = try? await service.add(contact) {
                 contact.deviceContactId = deviceId
                 try? modelContext.save()
             }

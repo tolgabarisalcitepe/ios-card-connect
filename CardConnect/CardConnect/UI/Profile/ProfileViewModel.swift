@@ -1,6 +1,7 @@
 // ProfileViewModel.swift
 // CardConnect
 
+import Combine
 import Foundation
 
 @MainActor final class ProfileViewModel: ObservableObject {
