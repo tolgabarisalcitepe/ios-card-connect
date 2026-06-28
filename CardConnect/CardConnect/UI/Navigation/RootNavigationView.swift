@@ -15,7 +15,7 @@ struct RootNavigationView: View {
         Group {
             if onboardingDone {
                 NavigationStack(path: $path) {
-                    HomeView()
+                    MainTabView(path: $path)
                         .navigationDestination(for: AppRoute.self) { destination(for: $0) }
                 }
                 .task {
