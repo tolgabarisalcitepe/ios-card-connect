@@ -231,7 +231,7 @@ struct ProfileView: View {
     }
 
     private var cardSection: some View {
-        Section("Kartvizitim") {
+        Section {
             cardRow(
                 label: "Ön Yüz",
                 image: frontCardImage,
@@ -244,6 +244,8 @@ struct ProfileView: View {
                 hasPath: !viewModel.profile.backCardPath.isEmpty,
                 onTap: { showBackOptions = true }
             )
+        } header: {
+            Text("Kartvizitim")
         } footer: {
             Text("Kartvizitinizin ön ve arka yüzünü ekleyin.")
         }
