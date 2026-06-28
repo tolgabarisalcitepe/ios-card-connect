@@ -12,8 +12,26 @@ struct ProfileView: View {
     @Environment(\.dependencies) private var dependencies
     @StateObject private var viewModel = ProfileViewModel()
 
+    // Avatar
     @State private var avatarItem: PhotosPickerItem?
     @State private var avatarImage: Image?
+    @State private var showAvatarOptions = false
+    @State private var showAvatarCamera = false
+    @State private var showAvatarGallery = false
+
+    // Business card
+    @State private var frontCardImage: Image?
+    @State private var backCardImage: Image?
+    @State private var showFrontOptions = false
+    @State private var showBackOptions = false
+    @State private var showFrontCamera = false
+    @State private var showBackCamera = false
+    @State private var showFrontGallery = false
+    @State private var showBackGallery = false
+    @State private var frontGalleryItem: PhotosPickerItem?
+    @State private var backGalleryItem: PhotosPickerItem?
+
+    // Other sheets
     @State private var showQR = false
     @State private var showSelfScan = false
     @State private var showPrivacyPolicy = false
@@ -31,6 +49,7 @@ struct ProfileView: View {
             basicInfoSection
             contactSection
             socialSection
+            cardSection
             privacySection
         }
         .navigationTitle(isOnboarding ? "Profilinizi Kurun" : "Profil")
@@ -53,15 +72,53 @@ struct ProfileView: View {
             }
             if !isOnboarding {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showQR = true
-                    } label: {
+                    Button { showQR = true } label: {
                         Image(systemName: "qrcode")
                     }
                     .disabled(isProfileEmpty)
                 }
             }
         }
+        // Avatar options
+        .confirmationDialog("Profil Fotoğrafı", isPresented: $showAvatarOptions) {
+            Button("Fotoğraf Çek") { showAvatarCamera = true }
+            Button("Galeriden Seç") { avatarItem = nil; showAvatarGallery = true }
+            if !viewModel.profile.avatarPath.isEmpty {
+                Button("Kaldır", role: .destructive) { removeAvatar() }
+            }
+            Button("İptal", role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showAvatarGallery, selection: $avatarItem, matching: .images)
+        .sheet(isPresented: $showAvatarCamera) {
+            ProfileCameraPickerView(mode: .avatar) { applyAvatar($0) }
+        }
+        // Front card options
+        .confirmationDialog("Ön Yüz", isPresented: $showFrontOptions) {
+            Button("Fotoğraf Çek") { showFrontCamera = true }
+            Button("Galeriden Seç") { frontGalleryItem = nil; showFrontGallery = true }
+            if !viewModel.profile.frontCardPath.isEmpty {
+                Button("Kaldır", role: .destructive) { removeFrontCard() }
+            }
+            Button("İptal", role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showFrontGallery, selection: $frontGalleryItem, matching: .images)
+        .sheet(isPresented: $showFrontCamera) {
+            ProfileCameraPickerView(mode: .card) { applyFrontCard($0) }
+        }
+        // Back card options
+        .confirmationDialog("Arka Yüz", isPresented: $showBackOptions) {
+            Button("Fotoğraf Çek") { showBackCamera = true }
+            Button("Galeriden Seç") { backGalleryItem = nil; showBackGallery = true }
+            if !viewModel.profile.backCardPath.isEmpty {
+                Button("Kaldır", role: .destructive) { removeBackCard() }
+            }
+            Button("İptal", role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showBackGallery, selection: $backGalleryItem, matching: .images)
+        .sheet(isPresented: $showBackCamera) {
+            ProfileCameraPickerView(mode: .card) { applyBackCard($0) }
+        }
+        // Other sheets
         .sheet(isPresented: $showQR) {
             QRCodeView(profile: viewModel.profile)
         }
@@ -69,9 +126,7 @@ struct ProfileView: View {
             PrivacyPolicyView()
         }
         .sheet(isPresented: $showSelfScan) {
-            ProfileSetupView { parsed in
-                applyParsedCard(parsed)
-            }
+            ProfileSetupView { parsed in applyParsedCard(parsed) }
         }
         .alert("Hata", isPresented: .init(
             get: { viewModel.errorMessage != nil },
@@ -83,32 +138,20 @@ struct ProfileView: View {
         }
         .task {
             await viewModel.load(from: dependencies.userProfileStore)
-            loadAvatarIfNeeded()
+            loadImagesFromDisk()
         }
-        .onChange(of: avatarItem) { _, newItem in
-            Task { await loadAvatar(from: newItem) }
-        }
+        .onChange(of: avatarItem) { _, item in Task { await loadAvatarFromPicker(item) } }
+        .onChange(of: frontGalleryItem) { _, item in Task { await loadCardFromPicker(item, side: .front) } }
+        .onChange(of: backGalleryItem)  { _, item in Task { await loadCardFromPicker(item, side: .back) } }
     }
 
     // MARK: - Sections
-
-    private var selfScanSection: some View {
-        Section {
-            Button {
-                showSelfScan = true
-            } label: {
-                Label("Bilgilerimi Oku", systemImage: "doc.viewfinder")
-            }
-        } footer: {
-            Text("Kendi kartvizitini tara — boş alanlar otomatik doldurulur.")
-        }
-    }
 
     private var avatarSection: some View {
         Section {
             HStack {
                 Spacer()
-                PhotosPicker(selection: $avatarItem, matching: .images) {
+                Button { showAvatarOptions = true } label: {
                     avatarContent
                         .overlay(alignment: .bottomTrailing) {
                             Image(systemName: "pencil.circle.fill")
@@ -136,6 +179,18 @@ struct ProfileView: View {
                 .clipShape(Circle())
         } else {
             InitialsAvatarView(fullName: viewModel.profile.fullName, size: 90)
+        }
+    }
+
+    private var selfScanSection: some View {
+        Section {
+            Button {
+                showSelfScan = true
+            } label: {
+                Label("Bilgilerimi Oku", systemImage: "doc.viewfinder")
+            }
+        } footer: {
+            Text("Kendi kartvizitini tara — boş alanlar otomatik doldurulur.")
         }
     }
 
@@ -175,49 +230,161 @@ struct ProfileView: View {
         }
     }
 
-    private var privacySection: some View {
-        Section("Hakkında") {
-            Button("Gizlilik Politikası") {
-                showPrivacyPolicy = true
-            }
+    private var cardSection: some View {
+        Section("Kartvizitim") {
+            cardRow(
+                label: "Ön Yüz",
+                image: frontCardImage,
+                hasPath: !viewModel.profile.frontCardPath.isEmpty,
+                onTap: { showFrontOptions = true }
+            )
+            cardRow(
+                label: "Arka Yüz",
+                image: backCardImage,
+                hasPath: !viewModel.profile.backCardPath.isEmpty,
+                onTap: { showBackOptions = true }
+            )
+        } footer: {
+            Text("Kartvizitinizin ön ve arka yüzünü ekleyin.")
         }
     }
 
-    // MARK: - OCR apply: fills only empty fields
+    @ViewBuilder
+    private func cardRow(label: String, image: Image?, hasPath: Bool, onTap: @escaping () -> Void) -> some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                if let image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 72, height: 45)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                } else {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.secondary.opacity(0.15))
+                        .frame(width: 72, height: 45)
+                        .overlay {
+                            Image(systemName: "plus")
+                                .foregroundStyle(.secondary)
+                        }
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label)
+                        .foregroundStyle(.primary)
+                    Text(hasPath ? "Değiştir veya Kaldır" : "Ekle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var privacySection: some View {
+        Section("Hakkında") {
+            Button("Gizlilik Politikası") { showPrivacyPolicy = true }
+        }
+    }
+
+    // MARK: - OCR apply
 
     private func applyParsedCard(_ card: ParsedCard) {
         if viewModel.profile.firstName.isEmpty { viewModel.profile.firstName = card.firstName }
         if viewModel.profile.lastName.isEmpty  { viewModel.profile.lastName  = card.lastName  }
         if viewModel.profile.company.isEmpty   { viewModel.profile.company   = card.company   }
         if viewModel.profile.title.isEmpty     { viewModel.profile.title     = card.title     }
-        if viewModel.profile.phone.isEmpty,    let p = card.phones.first  { viewModel.profile.phone = p }
-        if viewModel.profile.email.isEmpty,    let e = card.emails.first  { viewModel.profile.email = e }
+        if viewModel.profile.phone.isEmpty,    let p = card.phones.first { viewModel.profile.phone = p }
+        if viewModel.profile.email.isEmpty,    let e = card.emails.first { viewModel.profile.email = e }
         if viewModel.profile.linkedin.isEmpty  { viewModel.profile.linkedin  = card.linkedin  }
     }
 
     // MARK: - Avatar helpers
 
-    private func loadAvatarIfNeeded() {
-        guard !viewModel.profile.avatarPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: viewModel.profile.avatarPath)
-        guard let data = try? Data(contentsOf: url),
-              let uiImage = UIImage(data: data) else { return }
+    private func applyAvatar(_ uiImage: UIImage) {
         avatarImage = Image(uiImage: uiImage)
-    }
-
-    private func loadAvatar(from item: PhotosPickerItem?) async {
-        guard let item,
-              let data = try? await item.loadTransferable(type: Data.self),
-              let uiImage = UIImage(data: data) else { return }
-        avatarImage = Image(uiImage: uiImage)
-        if let savedPath = saveAvatar(data: data) {
-            viewModel.profile.avatarPath = savedPath
+        if let data = uiImage.jpegData(compressionQuality: 0.85),
+           let path = saveToDisk(data: data, filename: "profile_avatar.jpg") {
+            viewModel.profile.avatarPath = path
         }
     }
 
-    private func saveAvatar(data: Data) -> String? {
+    private func removeAvatar() {
+        PhotoStorage.deletePhotos(paths: [viewModel.profile.avatarPath])
+        viewModel.profile.avatarPath = ""
+        avatarImage = nil
+    }
+
+    private func loadAvatarFromPicker(_ item: PhotosPickerItem?) async {
+        guard let item,
+              let data = try? await item.loadTransferable(type: Data.self),
+              let uiImage = UIImage(data: data) else { return }
+        applyAvatar(uiImage)
+    }
+
+    // MARK: - Card helpers
+
+    private enum CardSide { case front, back }
+
+    private func applyFrontCard(_ uiImage: UIImage) {
+        frontCardImage = Image(uiImage: uiImage)
+        if let data = uiImage.jpegData(compressionQuality: 0.85),
+           let path = saveToDisk(data: data, filename: "profile_front_card.jpg") {
+            viewModel.profile.frontCardPath = path
+        }
+    }
+
+    private func applyBackCard(_ uiImage: UIImage) {
+        backCardImage = Image(uiImage: uiImage)
+        if let data = uiImage.jpegData(compressionQuality: 0.85),
+           let path = saveToDisk(data: data, filename: "profile_back_card.jpg") {
+            viewModel.profile.backCardPath = path
+        }
+    }
+
+    private func removeFrontCard() {
+        PhotoStorage.deletePhotos(paths: [viewModel.profile.frontCardPath])
+        viewModel.profile.frontCardPath = ""
+        frontCardImage = nil
+    }
+
+    private func removeBackCard() {
+        PhotoStorage.deletePhotos(paths: [viewModel.profile.backCardPath])
+        viewModel.profile.backCardPath = ""
+        backCardImage = nil
+    }
+
+    private func loadCardFromPicker(_ item: PhotosPickerItem?, side: CardSide) async {
+        guard let item,
+              let data = try? await item.loadTransferable(type: Data.self),
+              let uiImage = UIImage(data: data) else { return }
+        switch side {
+        case .front: applyFrontCard(uiImage)
+        case .back:  applyBackCard(uiImage)
+        }
+    }
+
+    // MARK: - Disk helpers
+
+    private func loadImagesFromDisk() {
+        avatarImage    = loadImage(at: viewModel.profile.avatarPath)
+        frontCardImage = loadImage(at: viewModel.profile.frontCardPath)
+        backCardImage  = loadImage(at: viewModel.profile.backCardPath)
+    }
+
+    private func loadImage(at path: String) -> Image? {
+        guard !path.isEmpty,
+              let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+              let uiImage = UIImage(data: data) else { return nil }
+        return Image(uiImage: uiImage)
+    }
+
+    private func saveToDisk(data: Data, filename: String) -> String? {
         let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("profile_avatar.jpg")
+            .appendingPathComponent(filename)
         try? data.write(to: url, options: .atomic)
         return url.path
     }
